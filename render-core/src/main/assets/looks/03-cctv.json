@@ -1,0 +1,67 @@
+{
+ "schema": 1,
+ "id": "cctv",
+ "name": "CCTV",
+ "virtualResolution": {
+  "w": 352,
+  "h": 264
+ },
+ "upscale": "linear",
+ "exportScale": 3,
+ "overlay": {
+  "style": "cctv"
+ },
+ "params": {
+  "tone.saturation": 0.15,
+  "tone.contrast": 1.3,
+  "tone.exposure": 1.05,
+  "lens.vignette": 0.6,
+  "lens.softness": 0.9,
+  "tape.jitter": 0.8,
+  "tape.interlace": 0.5,
+  "tape.headSwitch": 0.4,
+  "digital.scanlines": 0.5,
+  "digital.grain": 0.3,
+  "digital.paletteAmount": 0.4,
+  "digital.paletteDark": [
+   0.0,
+   0.06,
+   0.05
+  ],
+  "digital.paletteLight": [
+   0.85,
+   1.0,
+   0.94
+  ]
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.5,
+   "targets": [
+    {
+     "path": "digital.grain",
+     "from": 0.1,
+     "to": 0.6
+    },
+    {
+     "path": "tape.jitter",
+     "from": 0.2,
+     "to": 2.0
+    },
+    {
+     "path": "tape.dropouts",
+     "from": 0.0,
+     "to": 0.5,
+     "curve": "quad"
+    },
+    {
+     "path": "lens.softness",
+     "from": 0.4,
+     "to": 1.6
+    }
+   ]
+  }
+ ]
+}

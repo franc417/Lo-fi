@@ -1,0 +1,76 @@
+{
+ "schema": 1,
+ "id": "camcorder-98",
+ "name": "Camcorder '98",
+ "virtualResolution": {
+  "w": 480,
+  "h": 360
+ },
+ "upscale": "linear",
+ "exportScale": 2,
+ "overlay": {
+  "style": "camcorder"
+ },
+ "params": {
+  "lens.softness": 0.8,
+  "lens.vignette": 0.35,
+  "lens.chromaAb": 1.0,
+  "lens.bloom": 0.5,
+  "tone.exposure": 1.1,
+  "tone.contrast": 1.15,
+  "tone.blackCrush": 0.04,
+  "tone.saturation": 1.15,
+  "tone.shadowTint": [
+   -0.02,
+   0.04,
+   0.08
+  ],
+  "tone.highlightTint": [
+   0.06,
+   0.04,
+   -0.02
+  ],
+  "tape.chromaBleed": 5.0,
+  "tape.ghost": 0.22,
+  "tape.jitter": 0.5,
+  "tape.interlace": 0.3,
+  "tape.headSwitch": 0.7,
+  "digital.grain": 0.18,
+  "digital.scanlines": 0.2
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.5,
+   "targets": [
+    {
+     "path": "digital.grain",
+     "from": 0.05,
+     "to": 0.4
+    },
+    {
+     "path": "tape.chromaBleed",
+     "from": 1.5,
+     "to": 8.0
+    },
+    {
+     "path": "tape.ghost",
+     "from": 0.05,
+     "to": 0.4
+    },
+    {
+     "path": "tape.dropouts",
+     "from": 0.0,
+     "to": 0.6,
+     "curve": "quad"
+    },
+    {
+     "path": "lens.softness",
+     "from": 0.3,
+     "to": 1.8
+    }
+   ]
+  }
+ ]
+}

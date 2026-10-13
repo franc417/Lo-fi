@@ -1,0 +1,3 @@
+moderngl>=5.10
+numpy
+pillow

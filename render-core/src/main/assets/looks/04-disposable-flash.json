@@ -1,0 +1,60 @@
+{
+ "schema": 1,
+ "id": "disposable-flash",
+ "name": "Disposable Flash",
+ "virtualResolution": {
+  "w": 640,
+  "h": 480
+ },
+ "upscale": "linear",
+ "exportScale": 2,
+ "overlay": {
+  "style": "none"
+ },
+ "params": {
+  "tone.exposure": 1.25,
+  "tone.contrast": 1.25,
+  "tone.whitePoint": 0.85,
+  "tone.blackCrush": 0.08,
+  "tone.saturation": 1.15,
+  "tone.highlightTint": [
+   0.04,
+   0.02,
+   -0.03
+  ],
+  "tone.shadowTint": [
+   0.0,
+   0.0,
+   0.04
+  ],
+  "lens.vignette": 0.85,
+  "lens.softness": 0.6,
+  "lens.bloom": 0.7,
+  "lens.chromaAb": 0.8,
+  "digital.grain": 0.3
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.5,
+   "targets": [
+    {
+     "path": "digital.grain",
+     "from": 0.1,
+     "to": 0.55
+    },
+    {
+     "path": "lens.softness",
+     "from": 0.2,
+     "to": 1.4
+    },
+    {
+     "path": "lens.bloom",
+     "from": 0.3,
+     "to": 1.1
+    }
+   ]
+  }
+ ]
+}

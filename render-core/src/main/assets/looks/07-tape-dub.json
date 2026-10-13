@@ -1,0 +1,63 @@
+{
+ "schema": 1,
+ "id": "tape-dub",
+ "name": "Tape Dub",
+ "virtualResolution": {
+  "w": 400,
+  "h": 300
+ },
+ "upscale": "linear",
+ "exportScale": 2,
+ "overlay": {
+  "style": "camcorder"
+ },
+ "params": {
+  "tape.chromaBleed": 7.0,
+  "tape.ghost": 0.35,
+  "tape.jitter": 1.2,
+  "tape.interlace": 0.5,
+  "tape.dropouts": 0.5,
+  "tape.headSwitch": 1.0,
+  "lens.softness": 1.2,
+  "tone.saturation": 0.85,
+  "tone.contrast": 1.1,
+  "tone.blackCrush": 0.05,
+  "tone.shadowTint": [
+   0.0,
+   0.03,
+   0.08
+  ],
+  "digital.grain": 0.3,
+  "digital.scanlines": 0.3
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.6,
+   "targets": [
+    {
+     "path": "tape.chromaBleed",
+     "from": 3.0,
+     "to": 11.0
+    },
+    {
+     "path": "tape.dropouts",
+     "from": 0.1,
+     "to": 1.0,
+     "curve": "quad"
+    },
+    {
+     "path": "tape.ghost",
+     "from": 0.15,
+     "to": 0.6
+    },
+    {
+     "path": "digital.grain",
+     "from": 0.1,
+     "to": 0.55
+    }
+   ]
+  }
+ ]
+}

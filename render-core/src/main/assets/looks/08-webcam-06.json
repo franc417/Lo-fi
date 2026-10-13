@@ -1,0 +1,48 @@
+{
+ "schema": 1,
+ "id": "webcam-06",
+ "name": "Webcam '06",
+ "virtualResolution": {
+  "w": 320,
+  "h": 240
+ },
+ "upscale": "linear",
+ "exportScale": 3,
+ "overlay": {
+  "style": "none"
+ },
+ "params": {
+  "lens.softness": 1.0,
+  "lens.chromaAb": 0.5,
+  "tone.saturation": 0.9,
+  "tone.exposure": 1.05,
+  "digital.levels": 32.0,
+  "digital.dither": 0.5,
+  "digital.grain": 0.35,
+  "tape.ghost": 0.25
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.5,
+   "targets": [
+    {
+     "path": "digital.grain",
+     "from": 0.15,
+     "to": 0.6
+    },
+    {
+     "path": "digital.levels",
+     "from": 64.0,
+     "to": 16.0
+    },
+    {
+     "path": "tape.ghost",
+     "from": 0.1,
+     "to": 0.45
+    }
+   ]
+  }
+ ]
+}

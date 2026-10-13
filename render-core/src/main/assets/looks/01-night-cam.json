@@ -1,0 +1,63 @@
+{
+ "schema": 1,
+ "id": "night-cam",
+ "name": "Night Cam",
+ "virtualResolution": {
+  "w": 480,
+  "h": 360
+ },
+ "upscale": "linear",
+ "exportScale": 2,
+ "overlay": {
+  "style": "camcorder"
+ },
+ "params": {
+  "lens.softness": 0.6,
+  "lens.bloom": 0.35,
+  "lens.vignette": 0.55,
+  "tone.exposure": 0.95,
+  "tone.contrast": 1.45,
+  "tone.blackCrush": 0.1,
+  "night.amount": 1.0,
+  "night.color": [
+   0.22,
+   1.0,
+   0.38
+  ],
+  "night.gain": 1.25,
+  "tape.jitter": 0.4,
+  "tape.ghost": 0.15,
+  "digital.grain": 0.28,
+  "digital.scanlines": 0.3
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.5,
+   "targets": [
+    {
+     "path": "digital.grain",
+     "from": 0.1,
+     "to": 0.7
+    },
+    {
+     "path": "lens.softness",
+     "from": 0.2,
+     "to": 1.6
+    },
+    {
+     "path": "tape.ghost",
+     "from": 0.0,
+     "to": 0.35
+    },
+    {
+     "path": "tape.dropouts",
+     "from": 0.0,
+     "to": 0.5,
+     "curve": "quad"
+    }
+   ]
+  }
+ ]
+}
