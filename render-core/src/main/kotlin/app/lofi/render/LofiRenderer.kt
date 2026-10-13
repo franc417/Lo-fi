@@ -46,7 +46,7 @@ class LofiRenderer(private val assets: AssetManager, private val font: PixelFont
     @Volatile var renderRequester: (() -> Unit)? = null
     @Volatile var onError: ((String) -> Unit)? = null
     @Volatile var onContextRecreated: (() -> Unit)? = null
-    @Volatile private var rotationDegrees = 0
+    @Volatile private var rotationDegrees = -1   // -1 = CameraX has not told us yet
     @Volatile private var mirror = false
 
     // ---- GL-thread state ----
@@ -190,29 +190,18 @@ class LofiRenderer(private val assets: AssetManager, private val font: PixelFont
         st.getTransformMatrix(texMatrix)
 
         // 1) ingest: camera -> virtual resolution (rotate / mirror / centre-crop)
-        val r = ((rotationDegrees % 360) + 360) % 360
-        val swap = r == 90 || r == 270
-        val dispW = if (swap) inputH else inputW
-        val dispH = if (swap) inputW else inputH
-        val sa = dispW.toFloat() / dispH
-        val ta = vrW.toFloat() / vrH
-        val cropX = if (sa > ta) ta / sa else 1f
-        val cropY = if (sa > ta) 1f else sa / ta
-        val c: Float
-        val s: Float
-        when (r) {
-            90 -> { c = 0f; s = 1f }
-            180 -> { c = -1f; s = 0f }
-            270 -> { c = 0f; s = -1f }
-            else -> { c = 1f; s = 0f }
+        val ip = IngestTransform.compute(inputW, inputH, vrW, vrH, rotationDegrees, texMatrix)
+        if (frameIndex == 0 || frameIndex % 300 == 0) {
+            LofiLog.i("ingest", "input=${inputW}x$inputH cameraxRotation=$rotationDegrees matrixRotation=${ip.matrixDegrees} " +
+                "remaining=${ip.remainingDegrees} mirror=$mirror crop=${ip.cropX},${ip.cropY}")
         }
         bindTarget(ing.fbo, ing.w, ing.h)
         GLES20.glUseProgram(p.ingest.id)
         bindTexture(0, GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTex)
         GLES20.glUniform1i(p.ingest.loc("uTex"), 0)
         GLES20.glUniformMatrix4fv(p.ingest.loc("uTexMatrix"), 1, false, texMatrix, 0)
-        GLES20.glUniformMatrix2fv(p.ingest.loc("uRot"), 1, false, floatArrayOf(c, s, -s, c), 0)
-        GLES20.glUniform2f(p.ingest.loc("uCrop"), cropX, cropY)
+        GLES20.glUniformMatrix2fv(p.ingest.loc("uRot"), 1, false, floatArrayOf(ip.rotCos, ip.rotSin, -ip.rotSin, ip.rotCos), 0)
+        GLES20.glUniform2f(p.ingest.loc("uCrop"), ip.cropX, ip.cropY)
         GLES20.glUniform1f(p.ingest.loc("uMirror"), if (mirror) 1f else 0f)
         draw()
 

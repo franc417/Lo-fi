@@ -62,7 +62,7 @@ Once the workflow is active (see [tools/ci](tools/ci/README.md)), every push bui
 
 | Layer | How | Where |
 |---|---|---|
-| Look parsing, macros, validation, overlay, shader/registry consistency | JUnit | `render-core/src/test`, CI `android` job |
+| Look parsing, macros, validation, overlay, camera-rotation maths, shader/registry consistency | JUnit | `render-core/src/test`, CI `android` job |
 | Shader output | Render all looks headlessly with Mesa and compare with `docs/looks/*.jpg` | `python tools/golden/render_golden.py --check`, CI `shaders` job |
 | Camera, GL setup, saving, performance | **On a real phone only** | Phase 0 checklist in `docs/DESIGN.md` |
 

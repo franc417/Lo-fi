@@ -6,7 +6,7 @@ import app.lofi.render.LookParseException
 import app.lofi.render.LookParser
 import app.lofi.render.LofiLog
 
-/** Loads every `looks/*.json` bundled in the assets, sorted by file name. Invalid looks are logged and skipped. */
+/** Loads every JSON file in the bundled `looks` asset folder, sorted by file name. Invalid looks are logged and skipped. */
 class LookRepository(private val assets: AssetManager, private val parser: LookParser) {
     fun loadAll(): List<Look> {
         val names = assets.list("looks")?.filter { it.endsWith(".json") }?.sorted().orEmpty()

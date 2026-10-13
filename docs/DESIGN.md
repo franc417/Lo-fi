@@ -72,7 +72,7 @@ look editor, library with re-look, hold-to-compare, fake-date picker.
 
 * **Phase 0 (device gate), do next on a phone:** install the CI APK and check (1) preview is upright on the back
   and front cameras, (2) mirror is right for the front camera, (3) 30 fps with each look (`perf` log lines),
-  (4) captured photo matches the preview, (5) no GL errors in `lofi-log.jsonl`.
+  (4) captured photo matches the preview, (5) no GL errors in `lofi-log.jsonl`. If the preview is rotated or stretched, send the `ingest` log line.
 * **Phase 1, photo MVP:** done in code, pending Phase 0.
 * **Phase 2, video:** recording with looks, export profiles, audio chain, pause/resume.
 * **Phase 3:** import and re-look, look editor, preset sharing.

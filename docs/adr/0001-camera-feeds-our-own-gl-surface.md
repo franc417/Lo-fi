@@ -19,8 +19,12 @@ size and reads it back; no `ImageCapture` use case is needed. Video (Phase 2) wi
 ## Consequences
 
 * Preview, photo and video share one render graph by construction (WYSIWYG).
-* We own rotation, mirroring and cropping (`ingest.frag`, driven by `SurfaceRequest.TransformationInfo`).
-  These are the first things to verify on a device.
+* We own rotation, mirroring and cropping (`ingest.frag`, parameters from `IngestTransform`). CameraX documents
+  `TransformationInfo.rotationDegrees` as the *total* clockwise sensor-to-target rotation, while a camera-connected
+  `SurfaceTexture` matrix already contains the camera orientation. So we read the rotation out of the matrix
+  (`matrixRotationDegrees`) and apply only the difference; mirroring is applied after rotation, as CameraX
+  specifies. This is covered by unit tests but is still the first thing to verify on a device: the `ingest` log
+  line prints `cameraxRotation`, `matrixRotation`, `remaining` and `crop`.
 * We give up CameraX's effect plumbing and must handle GL context loss ourselves (`onContextRecreated` rebinds).
 * "Quality" capture (full-resolution still, then process) is not available yet; it would add `ImageCapture`.
 
