@@ -74,7 +74,7 @@ images), so also eyeball the sheet.
 
 The app writes `files/logs/lofi-log.jsonl` (size-capped, rolling) with GL info, camera events, perf
 (fps / CPU ms every 150 frames), shader or framebuffer errors and uncaught crashes. Errors that matter are also
-shown on screen. In-app log export is on the roadmap.
+shown on screen. Tap **LOG** at the top-right of the preview to share the file.
 
 ## Contributing workflow
 

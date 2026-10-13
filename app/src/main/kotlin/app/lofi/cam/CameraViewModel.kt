@@ -66,6 +66,8 @@ class CameraViewModel(app: Application) : AndroidViewModel(app) {
 
     fun clearMessage() = _state.update { it.copy(message = null) }
 
+    fun showMessage(msg: String) = _state.update { it.copy(message = msg) }
+
     fun capture() {
         val s = _state.value
         val look = s.looks.getOrNull(s.selected) ?: return

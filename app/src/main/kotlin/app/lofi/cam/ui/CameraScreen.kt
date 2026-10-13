@@ -1,6 +1,8 @@
 package app.lofi.cam.ui
 
 import android.Manifest
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.opengl.GLSurfaceView
 import androidx.activity.ComponentActivity
@@ -52,10 +54,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.lofi.cam.CameraViewModel
+import app.lofi.render.LofiLog
 import app.lofi.render.LofiRenderer
 import kotlinx.coroutines.delay
 
@@ -101,6 +105,18 @@ fun CameraScreen(vm: CameraViewModel) {
         Box(Modifier.fillMaxWidth().aspectRatio(state.aspect).background(Color.Black)) {
             if (hasPermission) GlPreview(vm.renderer, Modifier.fillMaxSize())
             else Text("Camera permission needed", color = Cream, fontFamily = Mono, modifier = Modifier.align(Alignment.Center))
+            Text(
+                "LOG",
+                color = Cream,
+                fontFamily = Mono,
+                fontSize = 11.sp,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .background(Color(0x9905071F), RoundedCornerShape(6.dp))
+                    .clickable { shareLog(context) { vm.showMessage("No log written yet") } }
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            )
             state.message?.let {
                 Text(
                     it,
@@ -208,4 +224,20 @@ private fun GlPreview(renderer: LofiRenderer, modifier: Modifier) {
             }
         },
     )
+}
+
+/** Shares the rolling debug log through the system share sheet (FileProvider, no storage permission). */
+private fun shareLog(context: Context, onMissing: () -> Unit) {
+    val file = LofiLog.logFile()
+    if (file == null || !file.exists()) {
+        onMissing()
+        return
+    }
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.logs", file)
+    val send = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(send, "Share LoFiCam log"))
 }
