@@ -1,0 +1,50 @@
+{
+ "schema": 1,
+ "id": "pixel-gb",
+ "name": "Pixel GB",
+ "virtualResolution": {
+  "w": 160,
+  "h": 120
+ },
+ "upscale": "nearest",
+ "exportScale": 6,
+ "overlay": {
+  "style": "none"
+ },
+ "params": {
+  "tone.contrast": 1.55,
+  "tone.exposure": 1.0,
+  "digital.levels": 4.0,
+  "digital.dither": 0.8,
+  "digital.paletteAmount": 1.0,
+  "digital.paletteDark": [
+   0.059,
+   0.22,
+   0.059
+  ],
+  "digital.paletteLight": [
+   0.608,
+   0.737,
+   0.059
+  ]
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.5,
+   "targets": [
+    {
+     "path": "digital.dither",
+     "from": 0.4,
+     "to": 1.0
+    },
+    {
+     "path": "tone.contrast",
+     "from": 1.2,
+     "to": 1.9
+    }
+   ]
+  }
+ ]
+}

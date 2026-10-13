@@ -41,7 +41,7 @@ class LookParser(private val registry: ParamRegistry) {
             else -> fail("'upscale' must be 'nearest' or 'linear'")
         }
         val exportScale = root.optInt("exportScale", 1)
-        if (exportScale !in 1..4) fail("'exportScale' must be 1..4, got $exportScale")
+        if (exportScale !in 1..8) fail("'exportScale' must be 1..8, got $exportScale")
 
         val overlay = when (val s = root.optJSONObject("overlay")?.optString("style", "none") ?: "none") {
             "none" -> OverlayStyle.NONE
