@@ -29,6 +29,10 @@ jobs:
         run: |
           set -o pipefail
           xvfb-run -a python tools/golden/render_golden.py --check 2>&1 | tee golden.log
+      - name: Grain must be temporally independent
+        run: |
+          set -o pipefail
+          xvfb-run -a python tools/golden/test_noise.py 2>&1 | tee -a golden.log
       - name: Upload actual renders on failure
         if: failure()
         uses: actions/upload-artifact@v4

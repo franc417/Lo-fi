@@ -19,7 +19,10 @@ uint pcg(uint v) {
     uint w = ((s >> ((s >> 28u) + 4u)) ^ s) * 277803737u;
     return (w >> 22u) ^ w;
 }
+// The seed is hashed FIRST. Adding the raw frame number to the coordinates (as an earlier version did) makes the
+// noise field a translation of the previous frame's, i.e. grain that visibly slides down the screen.
 float hash12(vec2 p, int seed) {
     uvec2 q = uvec2(ivec2(p) + ivec2(65536));
-    return float(pcg(q.x + pcg(q.y + uint(seed)))) / 4294967295.0;
+    uint s = pcg(uint(seed) + 0x9E3779B9u);
+    return float(pcg(q.x + pcg(q.y + s))) / 4294967295.0;
 }
