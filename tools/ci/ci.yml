@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shaders:
+    name: Shader golden check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Software GL
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1-mesa-dri libglx-mesa0 libegl-mesa0 xvfb
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r tools/golden/requirements.txt
+      - name: Render every look and compare with docs/looks
+        run: xvfb-run -a python tools/golden/render_golden.py --check
+      - name: Upload actual renders on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-actual
+          path: /tmp/lofi-golden
+
+  android:
+    name: Unit tests and debug APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Unit tests + debug APK
+        run: ./gradlew --no-daemon --stacktrace :render-core:testDebugUnitTest :app:assembleDebug
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoFiCam-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            render-core/build/reports
+            app/build/reports
