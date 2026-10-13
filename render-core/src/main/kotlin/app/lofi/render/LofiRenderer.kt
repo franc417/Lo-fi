@@ -30,7 +30,15 @@ import javax.microedition.khronos.opengles.GL10
 class LofiRenderer(private val assets: AssetManager, private val font: PixelFont) : GLSurfaceView.Renderer {
 
     /** A look plus its fully resolved uniform values (macros applied). */
-    class Config(val look: Look, val uniforms: Map<String, FloatArray>, val portrait: Boolean = true)
+    class Config(
+        val look: Look,
+        val uniforms: Map<String, FloatArray>,
+        val portrait: Boolean = true,
+        /** Photo export multiplier of the virtual resolution (defaults to the look's own). */
+        val exportScale: Int = look.exportScale,
+        /** Burned-in HUD on/off (only matters for looks that have one). */
+        val hud: Boolean = true,
+    )
 
     private class InputRequest(val width: Int, val height: Int, val onSurface: (Surface) -> Unit)
     private class Target(val tex: Int, val fbo: Int, val w: Int, val h: Int)
@@ -221,7 +229,7 @@ class LofiRenderer(private val assets: AssetManager, private val font: PixelFont
         GLES20.glUniform2f(p.stage1.loc("uSize"), vrW.toFloat(), vrH.toFloat())
         GLES20.glUniform1i(p.stage1.loc("uFrame"), frameIndex)
         GLES20.glUniform1f(p.stage1.loc("uHistoryValid"), if (historyValid) 1f else 0f)
-        GLES20.glUniform1f(p.stage1.loc("uOverlayAmount"), if (cfg.look.overlay == OverlayStyle.NONE) 0f else 1f)
+        GLES20.glUniform1f(p.stage1.loc("uOverlayAmount"), if (cfg.look.overlay == OverlayStyle.NONE || !cfg.hud) 0f else 1f)
         uploadParams(p.stage1)
         draw()
 
@@ -258,8 +266,8 @@ class LofiRenderer(private val assets: AssetManager, private val font: PixelFont
 
     private fun capture(): Bitmap? {
         val cfg = config ?: return null
-        val w = vrW * cfg.look.exportScale
-        val h = vrH * cfg.look.exportScale
+        val w = vrW * cfg.exportScale
+        val h = vrH * cfg.exportScale
         val existing = exportT
         val ex: Target = if (existing != null && existing.w == w && existing.h == h) {
             existing

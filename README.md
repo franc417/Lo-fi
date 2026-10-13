@@ -5,12 +5,18 @@
 A retro camera app for Android. It applies lo-fi looks (night-vision, camcorder tape, CCTV, disposable flash,
 CCD digicam, 1-bit dither) **live** while you shoot, so what you see in the viewfinder is what gets saved.
 
-> **Status: Phase 1 (photo MVP).** Live preview with eight looks, a "Wear" slider, photo capture to
-> `Pictures/LoFiCam`, front/back camera. Video recording, import/re-look and the look editor are next
+> **Status: Phase 1 (photo MVP), working on a phone.** Live preview with ten looks (incl. two pixel/dither looks), a "Wear" slider,
+> photo size, HUD switch, photo capture to `Pictures/LoFiCam`, front/back camera. Video recording, import/re-look and the look editor are next
 > (see the [roadmap](docs/DESIGN.md#roadmap)). **Not yet run on a physical device**: CI proves it builds and the
 > shader/logic tests pass; the first on-device run is the Phase 0 gate. See [Testing](#testing).
 
 `LoFiCam` is a placeholder name.
+
+## Using it
+
+* **Swipe left/right** on the preview to change look.
+* **Swipe up** (or tap the look name) for the looks sheet: all looks, Wear, photo size.
+* **Swipe down** (or tap MENU) for the camera menu: front/back, HUD on/off, share debug log.
 
 ## The looks
 

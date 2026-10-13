@@ -25,7 +25,15 @@ data class UiState(
     val aspect: Float = 0.75f,   // preview width / height (portrait)
     val busy: Boolean = false,
     val message: String? = null,
+    val exportScale: Int = 2,
+    val hud: Boolean = true,
 )
+
+/** Photo size multipliers offered for a look (long side capped so the bitmap stays reasonable). */
+fun exportScaleOptions(look: Look): List<Int> {
+    val longSide = maxOf(look.virtualResolution.w, look.virtualResolution.h)
+    return listOf(1, 2, 3, 4, 6, 8).filter { longSide * it <= 2560 }
+}
 
 class CameraViewModel(app: Application) : AndroidViewModel(app) {
     val renderer: LofiRenderer
@@ -53,7 +61,26 @@ class CameraViewModel(app: Application) : AndroidViewModel(app) {
     fun selectLook(index: Int) {
         val look = _state.value.looks.getOrNull(index) ?: return
         val wear = look.macro("wear")?.default ?: 0.5f
-        _state.update { it.copy(selected = index, wear = wear) }
+        _state.update { it.copy(selected = index, wear = wear, exportScale = look.exportScale) }
+        push()
+    }
+
+    /** Swipe navigation: +1 = next look, -1 = previous (wraps). Shows the look name briefly. */
+    fun stepLook(delta: Int) {
+        val s = _state.value
+        if (s.looks.isEmpty()) return
+        val index = Math.floorMod(s.selected + delta, s.looks.size)
+        selectLook(index)
+        showMessage(s.looks[index].name)
+    }
+
+    fun setExportScale(scale: Int) {
+        _state.update { it.copy(exportScale = scale) }
+        push()
+    }
+
+    fun toggleHud() {
+        _state.update { it.copy(hud = !it.hud) }
         push()
     }
 
@@ -98,6 +125,6 @@ class CameraViewModel(app: Application) : AndroidViewModel(app) {
         val look = s.looks.getOrNull(s.selected) ?: return
         val vr = look.virtualResolution
         _state.update { it.copy(aspect = minOf(vr.w, vr.h).toFloat() / maxOf(vr.w, vr.h)) }
-        renderer.setConfig(LofiRenderer.Config(look, look.resolve(mapOf("wear" to s.wear))))
+        renderer.setConfig(LofiRenderer.Config(look, look.resolve(mapOf("wear" to s.wear)), exportScale = s.exportScale, hud = s.hud))
     }
 }
