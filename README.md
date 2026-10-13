@@ -56,7 +56,7 @@ Needs JDK 17 and the Android SDK (or just use the CI artifact).
 ./gradlew :app:assembleDebug               # app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Once the workflow is active (see [tools/ci](tools/ci/README.md)), every push builds a debug APK in GitHub Actions: open the run, download the **LoFiCam-debug-apk** artifact.
+Every push builds a debug APK in GitHub Actions: open the run, download the **LoFiCam-debug-apk** artifact.
 
 ## Testing
 
