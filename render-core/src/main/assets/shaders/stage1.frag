@@ -15,17 +15,22 @@ uniform float uLensSoftness;
 uniform float uLensVignette;
 uniform float uLensChromaAb;
 uniform float uLensBloom;
+uniform float uLensSharpen;
 uniform float uToneExposure;
 uniform float uToneContrast;
 uniform float uToneBlackCrush;
 uniform float uToneWhitePoint;
 uniform float uToneSaturation;
 uniform float uToneGamma;
+uniform float uToneExposureDrift;
 uniform vec3 uToneShadowTint;
 uniform vec3 uToneHighlightTint;
 uniform float uNightAmount;
 uniform vec3 uNightColor;
 uniform float uNightGain;
+uniform vec3 uNightIrWeights;
+uniform float uNightHotspot;
+uniform float uNightHotspotSize;
 uniform float uTapeChromaBleed;
 uniform float uTapeGhost;
 uniform float uTapeJitter;
@@ -77,8 +82,13 @@ void main() {
         col = yiq2rgb(yiq);
     }
 
-    // Tone.
-    col *= uToneExposure;
+    // Analog edge enhancement: unsharp mask, gives the bright/dark halos around edges of old camcorders.
+    if (uLensSharpen > 0.0) col += uLensSharpen * (fetch(uvj) - blur3(uvj, 1.5));
+
+    // Tone. Auto-gain "hunting": slow brightness drift, as on a CCD camcorder in low light (30 fps assumed).
+    float t = float(uFrame) / 30.0;
+    float drift = 1.0 + uToneExposureDrift * 0.12 * (0.6 * sin(t * 0.8) + 0.4 * sin(t * 2.1 + 1.3));
+    col *= uToneExposure * drift;
     col = (col - 0.5) * uToneContrast + 0.5;
     col = max(col - uToneBlackCrush, 0.0) / (1.0 - uToneBlackCrush);
     col /= uToneWhitePoint;
@@ -99,9 +109,14 @@ void main() {
     float d = length(uv - 0.5) * 1.4142;
     col *= mix(1.0, 1.0 - smoothstep(0.35, 1.05, d), uLensVignette);
 
-    // Night vision: luma boosted into a single phosphor colour.
+    // Night vision (IR "NightShot" style): brightness comes from the IR channel mix (red-heavy: skin and foliage
+    // glow, blue things go dark), lit by a camera-mounted IR lamp whose gaussian hotspot falls off towards the
+    // edges, then tinted into one colour.
     if (uNightAmount > 0.0) {
-        float nl = clamp(luma(col) * uNightGain, 0.0, 1.0);
+        float ir = dot(col, uNightIrWeights);
+        float r = length(uv - 0.5) * 2.0;
+        float lit = mix(1.0, exp(-(r * r) / (2.0 * uNightHotspotSize * uNightHotspotSize)), uNightHotspot);
+        float nl = clamp(ir * uNightGain * lit, 0.0, 1.0);
         col = mix(col, uNightColor * nl, uNightAmount);
     }
 

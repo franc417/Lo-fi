@@ -4,7 +4,7 @@ data class VirtualResolution(val w: Int, val h: Int)
 
 enum class Upscale { NEAREST, LINEAR }
 
-enum class OverlayStyle { NONE, CAMCORDER, CCTV }
+enum class OverlayStyle { NONE, CAMCORDER, CCTV, NIGHTSHOT }
 
 enum class Curve {
     LINEAR, QUAD;

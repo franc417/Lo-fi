@@ -47,6 +47,7 @@ class LookParser(private val registry: ParamRegistry) {
             "none" -> OverlayStyle.NONE
             "camcorder" -> OverlayStyle.CAMCORDER
             "cctv" -> OverlayStyle.CCTV
+            "nightshot" -> OverlayStyle.NIGHTSHOT
             else -> fail("unknown overlay style '$s'")
         }
 

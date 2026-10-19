@@ -9,26 +9,49 @@
  "upscale": "linear",
  "exportScale": 2,
  "overlay": {
-  "style": "camcorder"
+  "style": "nightshot"
  },
  "params": {
-  "lens.softness": 0.6,
-  "lens.bloom": 0.35,
-  "lens.vignette": 0.55,
-  "tone.exposure": 0.95,
-  "tone.contrast": 1.45,
-  "tone.blackCrush": 0.1,
+  "lens.softness": 0.85,
+  "lens.sharpen": 0.55,
+  "lens.bloom": 0.45,
+  "lens.vignette": 0.25,
+  "tone.exposure": 1.25,
+  "tone.contrast": 1.2,
+  "tone.blackCrush": 0.04,
+  "tone.gamma": 1.1,
+  "tone.exposureDrift": 0.6,
   "night.amount": 1.0,
   "night.color": [
-   0.22,
    1.0,
-   0.38
+   1.0,
+   1.0
   ],
-  "night.gain": 1.25,
-  "tape.jitter": 0.4,
-  "tape.ghost": 0.15,
-  "digital.grain": 0.28,
-  "digital.scanlines": 0.3
+  "night.gain": 1.35,
+  "night.irWeights": [
+   0.62,
+   0.32,
+   0.06
+  ],
+  "night.hotspot": 0.85,
+  "night.hotspotSize": 0.78,
+  "tape.jitter": 0.3,
+  "tape.ghost": 0.12,
+  "tape.interlace": 0.25,
+  "tape.headSwitch": 0.3,
+  "digital.grain": 0.22,
+  "digital.scanlines": 0.22,
+  "digital.paletteAmount": 1.0,
+  "digital.paletteDark": [
+   0.0,
+   0.045,
+   0.015
+  ],
+  "digital.paletteLight": [
+   0.8,
+   1.0,
+   0.84
+  ]
  },
  "macros": [
   {
@@ -38,18 +61,18 @@
    "targets": [
     {
      "path": "digital.grain",
-     "from": 0.1,
-     "to": 0.7
+     "from": 0.08,
+     "to": 0.45
     },
     {
      "path": "lens.softness",
-     "from": 0.2,
+     "from": 0.4,
      "to": 1.6
     },
     {
      "path": "tape.ghost",
      "from": 0.0,
-     "to": 0.35
+     "to": 0.3
     },
     {
      "path": "tape.dropouts",

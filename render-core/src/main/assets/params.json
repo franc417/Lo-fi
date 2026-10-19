@@ -30,6 +30,13 @@
    "max": 1.5
   },
   {
+   "path": "lens.sharpen",
+   "type": "float",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 2.0
+  },
+  {
    "path": "tone.exposure",
    "type": "float",
    "default": 1.0,
@@ -70,6 +77,13 @@
    "default": 1.0,
    "min": 0.5,
    "max": 2.0
+  },
+  {
+   "path": "tone.exposureDrift",
+   "type": "float",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 1.0
   },
   {
    "path": "tone.shadowTint",
@@ -117,6 +131,31 @@
    "default": 1.0,
    "min": 0.5,
    "max": 4.0
+  },
+  {
+   "path": "night.irWeights",
+   "type": "vec3",
+   "default": [
+    0.299,
+    0.587,
+    0.114
+   ],
+   "min": 0.0,
+   "max": 1.0
+  },
+  {
+   "path": "night.hotspot",
+   "type": "float",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 1.0
+  },
+  {
+   "path": "night.hotspotSize",
+   "type": "float",
+   "default": 0.7,
+   "min": 0.2,
+   "max": 2.0
   },
   {
    "path": "tape.chromaBleed",

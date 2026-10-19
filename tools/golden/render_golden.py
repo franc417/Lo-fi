@@ -20,7 +20,7 @@ FRAMES = 10            # frames fed through the pipeline so ghosting/history set
 MAE_TOLERANCE = 3.0    # 0-255, measured after a 4x box downsample (robust to JPEG + driver float noise)
 
 PRELUDE = "#version 330 core\n"
-FIXED_TIME = {"camcorder": ("12.10.2026", "22:57:03"), "cctv": ("12/10/2026", "22:57:03")}
+FIXED_TIME = {"camcorder": ("12.10.2026", "22:57:03"), "cctv": ("12/10/2026", "22:57:03"), "nightshot": ("OCT 12 2026", "10:57:03 PM")}
 
 
 def uniform_name(path):
@@ -59,7 +59,7 @@ def paint_overlay(font, style, w, h, date, time_s, rec_on=True):
         if x1 > x0 and y1 > y0:
             img[y0:y1, x0:x1] = color
 
-    def text(s, x, y, color):
+    def glyphs(s, x, y, color):
         for i, ch in enumerate(s):
             rows = font["glyphs"].get(ch)
             if rows is None:
@@ -70,15 +70,23 @@ def paint_overlay(font, style, w, h, date, time_s, rec_on=True):
                     if v == "X":
                         rect(gx + c * px, y + r * px, px, px, color)
 
-    WHITE, RED = (239, 239, 239, 255), (255, 45, 61, 255)
+    def text(s, x, y, color):  # one-cell dark drop shadow, then the text
+        glyphs(s, x + px, y + px, BLACK)
+        glyphs(s, x, y, color)
+
+    WHITE, RED, BLACK = (239, 239, 239, 255), (255, 45, 61, 255), (0, 0, 0, 255)
     dot = [".XXX.", "XXXXX", "XXXXX", "XXXXX", ".XXX."]
-    if style == "camcorder":
+    if style in ("camcorder", "nightshot"):
         if rec_on:
+            dot_color = WHITE if style == "nightshot" else RED
             for r, row in enumerate(dot):
                 for c, v in enumerate(row):
                     if v == "X":
-                        rect(margin + c * px, margin + (r + 1) * px, px, px, RED)
+                        rect(margin + c * px, margin + (r + 1) * px, px, px, dot_color)
         text("REC", margin + 7 * px, margin, WHITE)
+        if style == "nightshot":
+            label = "NIGHTSHOT"
+            text(label, w - margin - (len(label) * 6 * px - px), margin, WHITE)
         text(time_s, margin, h - margin - 7 * px, WHITE)
         text(date, margin, h - margin - 16 * px, WHITE)
     elif style == "cctv":
