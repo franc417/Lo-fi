@@ -1,10 +1,12 @@
 package app.lofi.cam
 
+import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Size
 import app.lofi.render.Look
 import app.lofi.render.Upscale
 import java.io.IOException
@@ -39,5 +41,31 @@ class MediaSaver(private val context: Context) {
             throw e
         }
         return uri
+    }
+
+    /** Small preview of a saved photo for the shutter-row circle; null if it cannot be loaded. */
+    fun thumbnail(uri: Uri, px: Int = 256): Bitmap? = try {
+        context.contentResolver.loadThumbnail(uri, Size(px, px), null)
+    } catch (e: Exception) {
+        null
+    }
+
+    /** The newest photo this app saved (own files need no storage permission), with its thumbnail. */
+    fun latest(): Pair<Uri, Bitmap>? {
+        val collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        context.contentResolver.query(
+            collection,
+            arrayOf(MediaStore.Images.Media._ID),
+            "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?",
+            arrayOf("Pictures/LoFiCam%"),
+            "${MediaStore.MediaColumns.DATE_ADDED} DESC",
+        )?.use { c ->
+            while (c.moveToNext()) {
+                val uri = ContentUris.withAppendedId(collection, c.getLong(0))
+                val thumb = thumbnail(uri)
+                if (thumb != null) return uri to thumb
+            }
+        }
+        return null
     }
 }

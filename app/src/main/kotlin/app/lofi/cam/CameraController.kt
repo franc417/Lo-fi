@@ -23,12 +23,14 @@ import java.util.concurrent.Executor
 class CameraController(private val context: Context, private val renderer: LofiRenderer) {
     private var ownerRef: WeakReference<LifecycleOwner>? = null
     private var front = false
+    private var mirror = false
 
     @Volatile var onError: ((String) -> Unit)? = null
 
-    fun bind(owner: LifecycleOwner, front: Boolean) {
+    fun bind(owner: LifecycleOwner, front: Boolean, mirror: Boolean) {
         ownerRef = WeakReference(owner)
         this.front = front
+        this.mirror = mirror
         val executor = ContextCompat.getMainExecutor(context)
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
@@ -46,7 +48,7 @@ class CameraController(private val context: Context, private val renderer: LofiR
                     )
                     .build()
                 val preview = Preview.Builder().setResolutionSelector(resolution).build()
-                renderer.setMirror(front)
+                renderer.setMirror(mirror)
                 preview.setSurfaceProvider(executor) { request -> onSurfaceRequested(request, executor) }
                 provider.unbindAll()
                 provider.bindToLifecycle(owner, selector, preview)
@@ -60,7 +62,13 @@ class CameraController(private val context: Context, private val renderer: LofiR
 
     /** Re-bind after the GL context was recreated (the old camera surface is dead). */
     fun rebind() {
-        ownerRef?.get()?.let { bind(it, front) }
+        ownerRef?.get()?.let { bind(it, front, mirror) }
+    }
+
+    /** Left-right flip of the image (used for the front camera); applied per frame, no rebind needed. */
+    fun setMirror(m: Boolean) {
+        mirror = m
+        renderer.setMirror(m)
     }
 
     private fun onSurfaceRequested(request: SurfaceRequest, executor: Executor) {

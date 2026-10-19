@@ -1,9 +1,12 @@
 package app.lofi.cam.ui
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.net.Uri
 import android.opengl.GLSurfaceView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -13,6 +16,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -54,7 +58,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -145,18 +151,21 @@ fun CameraScreen(vm: CameraViewModel) {
             Handle(Modifier.padding(top = 6.dp))
         }
 
-        // ---- bottom: look pill, shutter, flip; swipe up for the sheet ----
+        // ---- bottom: look pill, last-photo circle, shutter, switch camera; swipe up for the sheet ----
         Column(
             Modifier.align(Alignment.BottomCenter).fillMaxWidth().swipes(onUp = { sheetOpen = true }),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Handle()
+            Pill(look?.name?.uppercase() ?: "LOOKS", modifier = Modifier.padding(top = 8.dp).width(170.dp)) { sheetOpen = true }
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Pill(look?.name?.uppercase() ?: "LOOKS", modifier = Modifier.width(112.dp)) { sheetOpen = true }
+                PhotoCircle(state.lastPhoto) {
+                    state.lastPhotoUri?.let { openPhoto(context, it) { vm.showMessage("No gallery app found") } }
+                }
                 Box(
                     Modifier
                         .size(76.dp)
@@ -166,7 +175,7 @@ fun CameraScreen(vm: CameraViewModel) {
                         .background(if (state.busy) Color.Gray else Rec)
                         .clickable(enabled = !state.busy && hasPermission) { vm.capture() },
                 )
-                Pill("FLIP", modifier = Modifier.width(112.dp)) { vm.flipCamera() }
+                Pill("SWITCH", modifier = Modifier.width(76.dp)) { vm.flipCamera() }
             }
         }
 
@@ -191,6 +200,11 @@ fun CameraScreen(vm: CameraViewModel) {
                     Pill(if (state.front) "FRONT" else "BACK", Modifier.weight(1f)) { vm.flipCamera() }
                     Pill(if (state.hud) "HUD ON" else "HUD OFF", Modifier.weight(1f), selected = state.hud) { vm.toggleHud() }
                 }
+                Pill(
+                    if (state.mirrorFront) "MIRROR FRONT: ON" else "MIRROR FRONT: OFF",
+                    Modifier.fillMaxWidth(),
+                    selected = state.mirrorFront,
+                ) { vm.toggleMirror() }
                 Pill("SHARE DEBUG LOG", Modifier.fillMaxWidth()) { shareLog(context) { vm.showMessage("No log written yet") } }
                 Handle(Modifier.align(Alignment.CenterHorizontally))
             }
@@ -281,6 +295,22 @@ private fun Pill(text: String, modifier: Modifier = Modifier, selected: Boolean 
             .clickable(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 10.dp),
     )
+}
+
+/** Round preview of the last saved photo; tap to open it. */
+@Composable
+private fun PhotoCircle(bitmap: Bitmap?, onClick: () -> Unit) {
+    val shape = Modifier.size(64.dp).clip(CircleShape).border(2.dp, Cream, CircleShape)
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = "Last photo",
+            modifier = shape.clickable(onClick = onClick),
+            contentScale = ContentScale.Crop,
+        )
+    } else {
+        Box(shape.background(Color(0x331A2AD0)))
+    }
 }
 
 @Composable
@@ -382,4 +412,16 @@ private fun shareLog(context: Context, onMissing: () -> Unit) {
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(send, "Share LoFiCam log"))
+}
+
+private fun openPhoto(context: Context, uri: Uri, onFail: () -> Unit) {
+    val view = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, "image/*")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    try {
+        context.startActivity(view)
+    } catch (e: ActivityNotFoundException) {
+        onFail()
+    }
 }

@@ -1,6 +1,8 @@
 package app.lofi.cam
 
 import android.app.Application
+import android.graphics.Bitmap
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewModelScope
@@ -27,6 +29,10 @@ data class UiState(
     val message: String? = null,
     val exportScale: Int = 2,
     val hud: Boolean = true,
+    /** Mirror the front camera left-right (selfie preview). Applies to preview and saved photos. */
+    val mirrorFront: Boolean = true,
+    val lastPhoto: Bitmap? = null,
+    val lastPhotoUri: Uri? = null,
 )
 
 /** Photo size multipliers offered for a look (long side capped so the bitmap stays reasonable). */
@@ -54,9 +60,15 @@ class CameraViewModel(app: Application) : AndroidViewModel(app) {
         renderer.onContextRecreated = { camera.rebind() }
         camera.onError = { msg -> _state.update { it.copy(message = msg) } }
         if (looks.isNotEmpty()) selectLook(0)
+        viewModelScope.launch(Dispatchers.IO) {
+            saver.latest()?.let { (uri, thumb) -> _state.update { it.copy(lastPhoto = thumb, lastPhotoUri = uri) } }
+        }
     }
 
-    fun bindCamera(owner: LifecycleOwner) = camera.bind(owner, _state.value.front)
+    fun bindCamera(owner: LifecycleOwner) {
+        val s = _state.value
+        camera.bind(owner, s.front, s.front && s.mirrorFront)
+    }
 
     fun selectLook(index: Int) {
         val look = _state.value.looks.getOrNull(index) ?: return
@@ -77,6 +89,12 @@ class CameraViewModel(app: Application) : AndroidViewModel(app) {
     fun setExportScale(scale: Int) {
         _state.update { it.copy(exportScale = scale) }
         push()
+    }
+
+    fun toggleMirror() {
+        _state.update { it.copy(mirrorFront = !it.mirrorFront) }
+        val s = _state.value
+        camera.setMirror(s.front && s.mirrorFront)
     }
 
     fun toggleHud() {
@@ -106,7 +124,9 @@ class CameraViewModel(app: Application) : AndroidViewModel(app) {
                     "No camera frame yet. Try again."
                 } else {
                     try {
-                        saver.save(bitmap, look)
+                        val uri = saver.save(bitmap, look)
+                        val thumb = saver.thumbnail(uri)
+                        _state.update { it.copy(lastPhoto = thumb ?: it.lastPhoto, lastPhotoUri = uri) }
                         "Saved to Pictures/LoFiCam"
                     } catch (e: Exception) {
                         LofiLog.e("save", "failed", e)

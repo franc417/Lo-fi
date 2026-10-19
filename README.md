@@ -16,7 +16,8 @@ CCD digicam, 1-bit dither) **live** while you shoot, so what you see in the view
 
 * **Swipe left/right** on the preview to change look.
 * **Swipe up** (or tap the look name) for the looks sheet: all looks, Wear, photo size.
-* **Swipe down** (or tap MENU) for the camera menu: front/back, HUD on/off, share debug log.
+* **Swipe down** (or tap MENU) for the camera menu: front/back, mirror the front camera, HUD on/off, share debug log.
+* The **circle** at the bottom left is your last photo; tap it to open it. SWITCH changes camera.
 
 ## The looks
 
