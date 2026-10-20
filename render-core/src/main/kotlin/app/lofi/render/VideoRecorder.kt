@@ -7,6 +7,8 @@ import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import android.media.MediaMuxer
 import android.media.MediaRecorder
+import android.media.audiofx.AudioEffect
+import android.media.audiofx.NoiseSuppressor
 import android.view.Surface
 import java.io.FileDescriptor
 import java.nio.ByteBuffer
@@ -217,18 +219,25 @@ class VideoRecorder(
         override fun run() {
             var record: AudioRecord? = null
             var codec: MediaCodec? = null
+            val effects = ArrayList<AudioEffect>()
             try {
                 val minBuf = AudioRecord.getMinBufferSize(RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
                 check(minBuf > 0) { "AudioRecord.getMinBufferSize returned $minBuf" }
-                val rec = AudioRecord(
-                    MediaRecorder.AudioSource.MIC, RATE, AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT, maxOf(minBuf * 2, 16384),
-                )
+                val rec = openRecord(maxOf(minBuf * 2, 16384))
+                    ?: error("microphone could not be opened (busy or no permission)")
                 record = rec
-                check(rec.state == AudioRecord.STATE_INITIALIZED) { "AudioRecord not initialised (microphone busy or no permission)" }
+                // The platform noise suppressor removes steady background noise before we ever see it.
+                if (NoiseSuppressor.isAvailable()) {
+                    runCatching { NoiseSuppressor.create(rec.audioSessionId) }.getOrNull()?.let {
+                        it.setEnabled(true)
+                        effects.add(it)
+                    }
+                }
+                LofiLog.i("audio", "noiseSuppressor=${effects.isNotEmpty()} profile=${profile.id}")
+
                 val format = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, RATE, 1).apply {
                     setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
-                    setInteger(MediaFormat.KEY_BIT_RATE, 96_000)
+                    setInteger(MediaFormat.KEY_BIT_RATE, 128_000)
                     setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 16384)
                 }
                 val enc = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC)
@@ -243,18 +252,26 @@ class VideoRecorder(
                 val pcm = ShortArray(2048)
                 val info = MediaCodec.BufferInfo()
                 var samples = 0L
+                var lastLog = System.nanoTime()
                 while (!stopAudio) {
                     val n = rec.read(pcm, 0, pcm.size)
                     if (n < 0) break
                     if (n == 0) continue
                     chain.process(pcm, n)
-                    feed(enc, pcm, n, offsetUs + samples * 1_000_000L / RATE, false)
+                    if (!feed(enc, info, pcm, n, offsetUs + samples * 1_000_000L / RATE, false)) {
+                        LofiLog.w("audio", "encoder input stayed busy: dropped ${n} samples")
+                    }
                     samples += n
                     drain(enc, info, endOfStream = false, isVideo = false)
+                    val now = System.nanoTime()
+                    if (now - lastLog > 3_000_000_000L) {
+                        LofiLog.i("audio", chain.takeStats())
+                        lastLog = now
+                    }
                 }
                 var queued = false
                 for (attempt in 0 until 20) {
-                    if (feed(enc, pcm, 0, offsetUs + samples * 1_000_000L / RATE, true)) { queued = true; break }
+                    if (feed(enc, info, pcm, 0, offsetUs + samples * 1_000_000L / RATE, true)) { queued = true; break }
                 }
                 if (queued) drain(enc, info, endOfStream = true, isVideo = false)
             } catch (t: Throwable) {
@@ -262,6 +279,7 @@ class VideoRecorder(
                 hasAudio = false
                 audioUnavailable()
             } finally {
+                for (e in effects) runCatching { e.release() }
                 runCatching { record?.stop() }
                 runCatching { record?.release() }
                 runCatching { codec?.stop() }
@@ -269,15 +287,36 @@ class VideoRecorder(
             }
         }
 
-        /** Returns false if no input buffer was free (the chunk is dropped). */
-        private fun feed(codec: MediaCodec, pcm: ShortArray, n: Int, ptsUs: Long, eos: Boolean): Boolean {
-            val index = codec.dequeueInputBuffer(20_000)
-            if (index < 0) return false
-            val buf = codec.getInputBuffer(index) ?: return false
-            buf.clear()
-            buf.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(pcm, 0, n)
-            codec.queueInputBuffer(index, 0, n * 2, ptsUs, if (eos) MediaCodec.BUFFER_FLAG_END_OF_STREAM else 0)
-            return true
+        /** CAMCORDER is the source tuned for video (uses the microphone that suits the camera); MIC is the fallback. */
+        private fun openRecord(bufferSize: Int): AudioRecord? {
+            for (source in intArrayOf(MediaRecorder.AudioSource.CAMCORDER, MediaRecorder.AudioSource.MIC)) {
+                val r = AudioRecord(source, RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize)
+                if (r.state == AudioRecord.STATE_INITIALIZED) {
+                    LofiLog.i("audio", "microphone source=$source")
+                    return r
+                }
+                r.release()
+            }
+            return null
+        }
+
+        /**
+         * Hands one chunk of PCM to the encoder. If no input buffer is free it drains the encoder's output and retries,
+         * so chunks are not dropped (a dropped chunk is an audible click).
+         */
+        private fun feed(codec: MediaCodec, info: MediaCodec.BufferInfo, pcm: ShortArray, n: Int, ptsUs: Long, eos: Boolean): Boolean {
+            for (attempt in 0 until 10) {
+                val index = codec.dequeueInputBuffer(20_000)
+                if (index >= 0) {
+                    val buf = codec.getInputBuffer(index) ?: return false
+                    buf.clear()
+                    buf.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(pcm, 0, n)
+                    codec.queueInputBuffer(index, 0, n * 2, ptsUs, if (eos) MediaCodec.BUFFER_FLAG_END_OF_STREAM else 0)
+                    return true
+                }
+                drain(codec, info, endOfStream = false, isVideo = false)
+            }
+            return false
         }
     }
 
