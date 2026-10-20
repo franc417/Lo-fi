@@ -69,7 +69,8 @@
    "tape.interlace": 0.3,
    "tape.jitter": 0.6,
    "tape.headSwitch": 0.3,
-   "tape.dropouts": 0.15
+   "tape.dropouts": 0.15,
+   "tape.fieldOffset": 0.5
   }
  }
 }

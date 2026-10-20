@@ -34,7 +34,7 @@ export size. Parameters are in virtual pixels, so output is identical at any rea
 | Pass | Does | State |
 |---|---|---|
 | ingest | rotate, mirror, centre-crop, downscale | |
-| stage 1 | jitter, softness, chromatic aberration, chroma bleed (YIQ), tone, bloom, vignette, night vision, HUD burn-in, ghost / interlace | writes the temporal history |
+| stage 1 | jitter, interlaced-field judder, softness, chromatic aberration, chroma bleed (YIQ), tone, CCD vertical smear, bloom, vignette, night vision (IR channel mix, lamp hotspot, highlight halation, S-curve), HUD burn-in, ghost / interlace | writes the temporal history |
 | stage 2 | head-switch band, dropouts, grain, scanlines, quantise + Bayer dither, palette | |
 | present | upscale to screen / export | |
 

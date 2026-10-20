@@ -13,10 +13,10 @@
  },
  "params": {
   "lens.softness": 0.85,
-  "lens.sharpen": 0.55,
-  "lens.bloom": 0.45,
+  "lens.sharpen": 0.7,
+  "lens.bloom": 0.2,
   "lens.vignette": 0.25,
-  "tone.exposure": 1.25,
+  "tone.exposure": 1.0,
   "tone.contrast": 1.2,
   "tone.blackCrush": 0.04,
   "tone.gamma": 1.1,
@@ -27,31 +27,38 @@
    1.0,
    1.0
   ],
-  "night.gain": 1.35,
+  "night.gain": 1.12,
   "night.irWeights": [
    0.62,
    0.32,
    0.06
   ],
   "night.hotspot": 0.85,
-  "night.hotspotSize": 0.78,
+  "night.hotspotSize": 0.72,
   "tape.jitter": 0.3,
   "tape.ghost": 0.12,
-  "tape.interlace": 0.25,
+  "tape.interlace": 0.5,
   "tape.headSwitch": 0.3,
   "digital.grain": 0.22,
   "digital.scanlines": 0.22,
   "digital.paletteAmount": 1.0,
   "digital.paletteDark": [
    0.0,
-   0.045,
-   0.015
+   0.035,
+   0.01
   ],
   "digital.paletteLight": [
-   0.8,
+   0.15,
    1.0,
-   0.84
-  ]
+   0.5
+  ],
+  "lens.smear": 0.6,
+  "lens.smearLength": 0.93,
+  "night.bloomThreshold": 0.88,
+  "night.bloomAmount": 0.6,
+  "night.bloomSize": 6.0,
+  "night.curve": 0.75,
+  "tape.fieldOffset": 1.1
  },
  "macros": [
   {

@@ -318,6 +318,55 @@
    "default": 1.0,
    "min": 1.0,
    "max": 12.0
+  },
+  {
+   "path": "lens.smear",
+   "type": "float",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 1.0
+  },
+  {
+   "path": "lens.smearLength",
+   "type": "float",
+   "default": 0.9,
+   "min": 0.5,
+   "max": 0.98
+  },
+  {
+   "path": "tape.fieldOffset",
+   "type": "float",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 3.0
+  },
+  {
+   "path": "night.bloomThreshold",
+   "type": "float",
+   "default": 0.8,
+   "min": 0.3,
+   "max": 0.98
+  },
+  {
+   "path": "night.bloomAmount",
+   "type": "float",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 2.0
+  },
+  {
+   "path": "night.bloomSize",
+   "type": "float",
+   "default": 6.0,
+   "min": 1.0,
+   "max": 20.0
+  },
+  {
+   "path": "night.curve",
+   "type": "float",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 1.0
   }
  ]
 }
