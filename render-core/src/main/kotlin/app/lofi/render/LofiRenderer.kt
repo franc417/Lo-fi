@@ -4,6 +4,9 @@ import android.content.res.AssetManager
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.SurfaceTexture
+import android.opengl.EGL14
+import android.opengl.EGLContext
+import android.opengl.EGLDisplay
 import android.opengl.GLES11Ext
 import android.opengl.GLES20
 import android.opengl.GLES30
@@ -38,7 +41,17 @@ class LofiRenderer(private val assets: AssetManager, private val font: PixelFont
         val exportScale: Int = look.exportScale,
         /** Burned-in HUD on/off (only matters for looks that have one). */
         val hud: Boolean = true,
+        /** Use the look's HD internal resolution (clarity levels HD / VERY CLEAR). */
+        val useHd: Boolean = false,
     )
+
+    /** Receives the outcome of a recording on the main thread. */
+    interface RecordListener {
+        fun onFinished(success: Boolean)
+        fun onError(message: String)
+    }
+
+    private class RecordSession(val recorder: VideoRecorder, val listener: RecordListener)
 
     private class InputRequest(val width: Int, val height: Int, val onSurface: (Surface) -> Unit)
     private class Target(val tex: Int, val fbo: Int, val w: Int, val h: Int)
@@ -48,6 +61,8 @@ class LofiRenderer(private val assets: AssetManager, private val font: PixelFont
     private val inputRequests = ConcurrentLinkedQueue<InputRequest>()
     private val surfaceReleases = ConcurrentLinkedQueue<Surface>()
     private val captureRequests = ConcurrentLinkedQueue<(Bitmap?) -> Unit>()
+    private val recordStarts = ConcurrentLinkedQueue<RecordSession>()
+    private val stopRecordFlag = AtomicBoolean(false)
     private val frameAvailable = AtomicBoolean(false)
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -56,6 +71,8 @@ class LofiRenderer(private val assets: AssetManager, private val font: PixelFont
     @Volatile var onContextRecreated: (() -> Unit)? = null
     @Volatile private var rotationDegrees = -1   // -1 = CameraX has not told us yet
     @Volatile private var mirror = false
+    @Volatile var isRecording = false
+        private set
 
     // ---- GL-thread state ----
     private var programs: Programs? = null
@@ -86,6 +103,13 @@ class LofiRenderer(private val assets: AssetManager, private val font: PixelFont
     private var frameIndex = 0
     private val texMatrix = FloatArray(16)
     private var errorCount = 0
+    private var session: RecordSession? = null
+    private var encSurface: EncoderEglSurface? = null
+    private var recDisplay: EGLDisplay? = null
+    private var recContext: EGLContext? = null
+    private var recFirstTs = -1L
+    private var recPts0 = 0L
+    private var lastFrameTs = 0L
 
     // perf
     private var perfFrames = 0
@@ -112,6 +136,17 @@ class LofiRenderer(private val assets: AssetManager, private val font: PixelFont
 
     fun releaseInputSurface(surface: Surface) {
         surfaceReleases.add(surface)
+        renderRequester?.invoke()
+    }
+
+    /** Starts recording the processed picture into [recorder] (already prepared). Outcome via [listener]. */
+    fun startRecording(recorder: VideoRecorder, listener: RecordListener) {
+        recordStarts.add(RecordSession(recorder, listener))
+        renderRequester?.invoke()
+    }
+
+    fun stopRecording() {
+        stopRecordFlag.set(true)
         renderRequester?.invoke()
     }
 
@@ -161,6 +196,7 @@ class LofiRenderer(private val assets: AssetManager, private val font: PixelFont
 
     private fun drawFrame() {
         handleInputRequests()
+        handleRecordRequests()
         pendingConfig.getAndSet(null)?.let { applyConfig(it) }
         val cfg = config
         val p = programs
@@ -171,13 +207,16 @@ class LofiRenderer(private val assets: AssetManager, private val font: PixelFont
             drainCaptures(null)
             return
         }
+        var newFrame = false
         if (frameAvailable.getAndSet(false) && surfaceTexture != null) {
             val t0 = System.nanoTime()
             updateOverlay(cfg)
             runPipeline(cfg, p)
             recordPerf(System.nanoTime() - t0)
+            newFrame = true
         }
         presentTo(0, surfaceW, surfaceH)
+        if (newFrame) recordFrame()
         while (true) {
             val cb = captureRequests.poll() ?: break
             val bmp = try {
@@ -196,6 +235,7 @@ class LofiRenderer(private val assets: AssetManager, private val font: PixelFont
         val fin = finalT ?: return
         st.updateTexImage()
         st.getTransformMatrix(texMatrix)
+        lastFrameTs = if (st.timestamp != 0L) st.timestamp else System.nanoTime()
 
         // 1) ingest: camera -> virtual resolution (rotate / mirror / centre-crop)
         val ip = IngestTransform.compute(inputW, inputH, vrW, vrH, rotationDegrees, texMatrix)
@@ -289,10 +329,81 @@ class LofiRenderer(private val assets: AssetManager, private val font: PixelFont
         return out
     }
 
+    // ---------------- recording ----------------
+
+    private fun handleRecordRequests() {
+        val req = recordStarts.poll()
+        if (req != null) {
+            if (session != null) {
+                req.recorder.abort()
+                mainHandler.post { req.listener.onError("Already recording") }
+            } else {
+                try {
+                    val display = EGL14.eglGetCurrentDisplay()
+                    val context = EGL14.eglGetCurrentContext()
+                    encSurface = EncoderEglSurface(display, context, req.recorder.inputSurface)
+                    recDisplay = display
+                    recContext = context
+                    recFirstTs = -1L
+                    session = req
+                    req.recorder.start()
+                    isRecording = true
+                    LofiLog.i("record", "started ${req.recorder.width}x${req.recorder.height}")
+                } catch (t: Throwable) {
+                    LofiLog.e("record", "could not start", t)
+                    encSurface?.release()
+                    encSurface = null
+                    session = null
+                    req.recorder.abort()
+                    mainHandler.post { req.listener.onError("Recording failed to start: ${t.message}") }
+                }
+            }
+        }
+        if (stopRecordFlag.getAndSet(false)) endRecording()
+    }
+
+    /** Renders the current final image into the encoder surface, then restores the preview surface. */
+    private fun recordFrame() {
+        val s = session ?: return
+        val enc = encSurface ?: return
+        val display = recDisplay ?: return
+        val context = recContext ?: return
+        val drawSurface = EGL14.eglGetCurrentSurface(EGL14.EGL_DRAW)
+        val readSurface = EGL14.eglGetCurrentSurface(EGL14.EGL_READ)
+        try {
+            enc.makeCurrent()
+            if (recFirstTs < 0) {
+                recFirstTs = lastFrameTs
+                recPts0 = System.nanoTime() - s.recorder.startNano
+            }
+            presentTo(0, s.recorder.width, s.recorder.height)
+            enc.setPresentationTime(recPts0 + (lastFrameTs - recFirstTs))
+            enc.swap()
+        } catch (t: Throwable) {
+            LofiLog.e("record", "frame failed", t)
+        } finally {
+            EGL14.eglMakeCurrent(display, drawSurface, readSurface, context)
+        }
+        s.recorder.drainVideo()
+    }
+
+    private fun endRecording() {
+        val s = session ?: return
+        session = null
+        isRecording = false
+        encSurface?.release()
+        encSurface = null
+        Thread({
+            val ok = s.recorder.finish()
+            LofiLog.i("record", "finished ok=$ok")
+            mainHandler.post { s.listener.onFinished(ok) }
+        }, "lofi-finish").start()
+    }
+
     // ---------------- config / targets ----------------
 
     private fun applyConfig(cfg: Config) {
-        val vr = cfg.look.virtualResolution
+        val vr = cfg.look.resolution(cfg.useHd)
         val swap = cfg.portrait && vr.w > vr.h
         val w = if (swap) vr.h else vr.w
         val h = if (swap) vr.w else vr.h
@@ -389,6 +500,14 @@ class LofiRenderer(private val assets: AssetManager, private val font: PixelFont
 
     /** The GL context is gone: forget every GL object without calling GL. */
     private fun dropGlState() {
+        session?.let { s ->
+            LofiLog.e("record", "GL context lost while recording")
+            runCatching { s.recorder.abort() }
+            mainHandler.post { s.listener.onError("Recording stopped: graphics context was lost") }
+        }
+        session = null
+        isRecording = false
+        encSurface = null
         runCatching { inputSurface?.release() }
         runCatching { surfaceTexture?.release() }
         inputSurface = null; surfaceTexture = null; oesTex = 0
