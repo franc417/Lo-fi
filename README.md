@@ -5,8 +5,10 @@
 A retro camera app for Android. It applies lo-fi looks (night-vision, camcorder tape, CCTV, disposable flash,
 CCD digicam, 1-bit dither) **live** while you shoot, so what you see in the viewfinder is what gets saved.
 
-> **Status: Phase 1 (photo MVP), working on a phone.** Live preview with ten looks (incl. two pixel/dither looks), a "Wear" slider,
-> photo size, HUD switch, photo capture to `Pictures/LoFiCam`, front/back camera. Video recording, import/re-look and the look editor are next
+> **Status: photo works on a phone; video, zoom, flash, clarity and signal lines are new and need on-device testing.**
+> 23 modes (Night Cam, Camcorder '98, CCTV, flash, digicam, dither and pixel looks, plus Sony-Handycam-style effects: Sepia, B&W,
+> Negative Art, Solarize, Pastel, Mosaic, Old Movie, Trail, Slow Shutter, Strobe, Stretch, Slim, Cine), photo and video
+> (with sound) in every mode, zoom bar, flash/torch, front-camera mirror, clarity levels and a signal-lines control. Video recording, import/re-look and the look editor are next
 > (see the [roadmap](docs/DESIGN.md#roadmap)). **Not yet run on a physical device**: CI proves it builds and the
 > shader/logic tests pass; the first on-device run is the Phase 0 gate. See [Testing](#testing).
 
@@ -15,7 +17,11 @@ CCD digicam, 1-bit dither) **live** while you shoot, so what you see in the view
 ## Using it
 
 * **Swipe left/right** on the preview to change look.
-* **Swipe up** (or tap the look name) for the looks sheet: all looks, Wear, photo size.
+* **Swipe up** (or tap the mode name) for the sheet: all modes, **Wear**, **Clarity** (WEAR / CLEAR / HD / VERY CLEAR),
+  **Signal lines** (50% = the mode's own; lower removes lines, higher adds them), photo size.
+* **Top right** switches PHOTO / VIDEO (every mode records, with sound). **Top left** is the flash: a pulse for photos,
+  the torch while recording; the front camera uses a screen flash for photos.
+* **Zoom bar** (right edge, just above SWITCH): touch anywhere to jump there, drag to follow, let go to lock.
 * **Swipe down** (or tap MENU) for the camera menu: front/back, mirror the front camera, HUD on/off, share debug log.
 * The **circle** at the bottom left is your last photo; tap it to open it. SWITCH changes camera.
 
@@ -41,6 +47,8 @@ camera (CameraX Preview) -> OES texture
 * All effect sizes are in *virtual pixels*, so preview, photo export and (later) video look identical.
 * Photo capture renders the final frame again at the look's export scale and reads it back, so the saved image
   matches the preview exactly, including the upscale filter.
+
+![Clarity levels (rows) and signal lines (columns)](docs/looks/clarity.jpg)
 
 Details: [docs/DESIGN.md](docs/DESIGN.md) and [docs/adr](docs/adr).
 
@@ -71,7 +79,9 @@ Every push builds a debug APK in GitHub Actions: open the run, download the **Lo
 |---|---|---|
 | Look parsing, macros, validation, overlay, camera-rotation maths, shader/registry consistency | JUnit | `render-core/src/test`, CI `android` job |
 | Shader output | Render all looks headlessly with Mesa and compare with `docs/looks/*.jpg` | `python tools/golden/render_golden.py --check`, CI `shaders` job |
-| Camera, GL setup, saving, performance | **On a real phone only** | Phase 0 checklist in `docs/DESIGN.md` |
+| Tuning (clarity / lines) | JUnit + Kotlin-vs-Python parity check | `TuningTest`, `tools/golden` |
+| Audio filter chain | JUnit (frequency response, hiss, determinism) | `AudioChainTest` |
+| Camera, GL setup, video encoding, audio, zoom, flash, saving, performance | **On a real phone only** | Phase 0 checklist in `docs/DESIGN.md` |
 
 After changing a shader or a look: `python tools/golden/render_golden.py --update`, look at `docs/looks/sheet.jpg`,
 commit the new images. The golden check is deliberately blind to pure grain tweaks (it compares 4x-downsampled

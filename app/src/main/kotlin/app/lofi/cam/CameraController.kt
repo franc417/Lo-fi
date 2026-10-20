@@ -2,6 +2,7 @@ package app.lofi.cam
 
 import android.content.Context
 import android.util.Size
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
@@ -18,19 +19,26 @@ import java.util.concurrent.Executor
 
 /**
  * Binds a CameraX Preview whose surface is our own GL input surface (see ADR 0001): the camera never draws
- * to the screen directly, the [LofiRenderer] does.
+ * to the screen directly, the [LofiRenderer] does. Also owns zoom and the torch.
  */
 class CameraController(private val context: Context, private val renderer: LofiRenderer) {
     private var ownerRef: WeakReference<LifecycleOwner>? = null
     private var front = false
     private var mirror = false
+    private var zoom = 0f
+    private var camera: Camera? = null
 
     @Volatile var onError: ((String) -> Unit)? = null
+    @Volatile var onZoomRatio: ((Float) -> Unit)? = null
 
-    fun bind(owner: LifecycleOwner, front: Boolean, mirror: Boolean) {
+    /** True if the bound camera has a flash unit (most back cameras; almost no front cameras). */
+    val hasFlash: Boolean get() = camera?.cameraInfo?.hasFlashUnit() == true
+
+    fun bind(owner: LifecycleOwner, front: Boolean, mirror: Boolean, zoom: Float) {
         ownerRef = WeakReference(owner)
         this.front = front
         this.mirror = mirror
+        this.zoom = zoom
         val executor = ContextCompat.getMainExecutor(context)
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
@@ -51,8 +59,11 @@ class CameraController(private val context: Context, private val renderer: LofiR
                 renderer.setMirror(mirror)
                 preview.setSurfaceProvider(executor) { request -> onSurfaceRequested(request, executor) }
                 provider.unbindAll()
-                provider.bindToLifecycle(owner, selector, preview)
-                LofiLog.i("camera", "bound ${if (front) "front" else "back"} camera")
+                val bound = provider.bindToLifecycle(owner, selector, preview)
+                camera = bound
+                bound.cameraControl.setLinearZoom(this.zoom.coerceIn(0f, 1f))
+                bound.cameraInfo.zoomState.observe(owner) { z -> onZoomRatio?.invoke(z.zoomRatio) }
+                LofiLog.i("camera", "bound ${if (front) "front" else "back"} camera, flash=${bound.cameraInfo.hasFlashUnit()}")
             } catch (t: Throwable) {
                 LofiLog.e("camera", "bind failed", t)
                 onError?.invoke("Camera error: ${t.message}")
@@ -62,13 +73,23 @@ class CameraController(private val context: Context, private val renderer: LofiR
 
     /** Re-bind after the GL context was recreated (the old camera surface is dead). */
     fun rebind() {
-        ownerRef?.get()?.let { bind(it, front, mirror) }
+        ownerRef?.get()?.let { bind(it, front, mirror, zoom) }
     }
 
     /** Left-right flip of the image (used for the front camera); applied per frame, no rebind needed. */
     fun setMirror(m: Boolean) {
         mirror = m
         renderer.setMirror(m)
+    }
+
+    /** 0 = widest, 1 = maximum zoom. Applied immediately; whatever value was last set stays. */
+    fun setZoom(linear: Float) {
+        zoom = linear.coerceIn(0f, 1f)
+        camera?.cameraControl?.setLinearZoom(zoom)
+    }
+
+    fun setTorch(on: Boolean) {
+        camera?.cameraControl?.enableTorch(on)
     }
 
     private fun onSurfaceRequested(request: SurfaceRequest, executor: Executor) {

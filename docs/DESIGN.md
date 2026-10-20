@@ -74,7 +74,7 @@ look editor, library with re-look, hold-to-compare, fake-date picker.
   and front cameras, (2) mirror is right for the front camera, (3) 30 fps with each look (`perf` log lines),
   (4) captured photo matches the preview, (5) no GL errors in `lofi-log.jsonl`. If the preview is rotated or stretched, send the `ingest` log line.
 * **Phase 1, photo MVP:** done in code, pending Phase 0.
-* **Phase 2, video:** recording with looks, export profiles, audio chain, pause/resume.
+* **Phase 2, video:** recording engine, audio chain, torch, zoom: built, see [ADR 0002](adr/0002-video-recording-through-the-preview-context.md); pending device test. Still open: pause/resume, export profiles.
 * **Phase 3:** import and re-look, look editor, preset sharing.
 * **Phase 4:** quality tiers and thermal handling, onboarding, accessibility, log export, store prep.
 
