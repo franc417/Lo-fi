@@ -48,6 +48,10 @@ camera (CameraX Preview) -> OES texture
 * Photo capture renders the final frame again at the look's export scale and reads it back, so the saved image
   matches the preview exactly, including the upscale filter.
 
+Night Cam on a subject with real white highlights (fluorescence glow, halation, smear, crushed shadows with heavy grain):
+
+![Night Cam highlights](docs/looks/night-cam-highlights.jpg)
+
 ![Clarity levels (rows) and signal lines (columns)](docs/looks/clarity.jpg)
 
 Details: [docs/DESIGN.md](docs/DESIGN.md) and [docs/adr](docs/adr).

@@ -11,6 +11,7 @@ uniform float uTapeHeadSwitch;
 uniform float uFilmScratches;
 uniform float uFilmDust;
 uniform float uDigitalGrain;
+uniform float uDigitalGrainInverse;
 uniform float uDigitalScanlines;
 uniform float uDigitalLevels;
 uniform float uDigitalDither;
@@ -71,7 +72,9 @@ void main() {
 
     // Grain: per pixel, per frame, stronger in the shadows.
     float n = hash12(px, uFrame * 7 + 1) - 0.5;
-    col += n * uDigitalGrain * (0.55 + 0.9 * (1.0 - luma(col)));
+    float gl = luma(col);
+    float grainWeight = mix(0.55 + 0.9 * (1.0 - gl), 1.6 * (1.0 - gl), uDigitalGrainInverse);   // 1 = strictly (1 - luminance)
+    col += n * uDigitalGrain * grainWeight;
 
     // Scanlines at virtual resolution.
     col *= 1.0 - uDigitalScanlines * 0.45 * step(0.5, fract(row * 0.5));

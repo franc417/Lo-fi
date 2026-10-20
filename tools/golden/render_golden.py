@@ -239,11 +239,19 @@ def main():
     ap.add_argument("--update", action="store_true")
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--clarity-sheet", action="store_true")
+    ap.add_argument("--night-demo", action="store_true")
     ap.add_argument("--out", default="/tmp/lofi-golden")
     args = ap.parse_args()
 
     pipe = Pipeline()
     image = Image.open(INPUT).convert("RGB")
+    if args.night_demo:
+        # a ceramic cup has real white specular highlights: shows the UV-style fluorescence and the smear
+        look = next(json.loads(p.read_text()) for p in sorted((ASSETS / "looks").glob("*.json")) if json.loads(p.read_text())["id"] == "night-cam")
+        out = GOLDEN_DIR / "night-cam-highlights.jpg"
+        pipe.render_look(look, Image.open(pathlib.Path(__file__).parent / "input/cup.jpg").convert("RGB")).save(out, quality=90)
+        print("wrote", out)
+        return
     if args.clarity_sheet:
         out = GOLDEN_DIR / "clarity.jpg"
         clarity_sheet(pipe, image).save(out, quality=88)

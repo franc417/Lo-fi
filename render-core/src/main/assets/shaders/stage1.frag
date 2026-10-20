@@ -19,6 +19,8 @@ uniform float uLensSharpen;
 uniform float uLensStretchX;
 uniform float uLensSmear;
 uniform float uLensSmearLength;
+uniform float uLensSmearThreshold;
+uniform float uLensSmearTaps;
 uniform float uLensLetterbox;
 uniform float uToneExposure;
 uniform float uToneContrast;
@@ -33,9 +35,17 @@ uniform float uFilmFlicker;
 uniform float uFilmBounce;
 uniform float uTapeHold;
 uniform float uTapeFieldOffset;
-uniform float uNightBloomThreshold;
-uniform float uNightBloomAmount;
-uniform float uNightBloomSize;
+uniform vec3 uNightShadowColor;
+uniform float uNightSmooth;
+uniform float uNightSmoothSize;
+uniform float uNightCurveToe;
+uniform float uNightCurveShoulder;
+uniform float uNightFluorLow;
+uniform float uNightFluorHigh;
+uniform float uNightFluorGain;
+uniform vec3 uNightFluorColor;
+uniform float uNightHalation;
+uniform float uNightHalationSize;
 uniform float uNightCurve;
 uniform vec3 uToneShadowTint;
 uniform vec3 uToneHighlightTint;
@@ -127,16 +137,20 @@ void main() {
     l = luma(col);
     col += uToneShadowTint * pow(1.0 - l, 2.0) + uToneHighlightTint * pow(l, 2.0);
 
-    // CCD vertical smear: very bright spots (lamps, teeth, eyes) leave a streak that runs down the picture and fades.
+    // CCD vertical smear: pixels above the threshold (lamps, teeth, specular spots) leave a coloured trail that runs DOWN
+    // the picture: up to uLensSmearTaps lookups, each one attenuated by uLensSmearLength.
     if (uLensSmear > 0.0) {
-        float sm = 0.0;
+        vec3 trail = vec3(0.0);
         float w = 1.0;
         for (int k = 1; k <= 24; k++) {
+            if (float(k) > uLensSmearTaps) break;
             w *= uLensSmearLength;
-            float b = luma(fetch(vec2(uvj.x, uv.y + float(k) * 2.0 / uSize.y))) * uToneExposure;   // the pixel k*2 rows ABOVE
-            sm += w * max(b - 0.78, 0.0);
+            vec3 src = fetch(vec2(uvj.x, uv.y + float(k) * 2.0 / uSize.y));      // the pixel k*2 rows ABOVE this one
+            float b = luma(src) * uToneExposure;
+            float over = clamp((b - uLensSmearThreshold) / (1.0 - uLensSmearThreshold + 0.001), 0.0, 1.0);
+            trail += w * over * (src / max(luma(src), 0.05));
         }
-        col += vec3(sm * uLensSmear * 0.35);
+        col += trail * uLensSmear * 0.5;
     }
 
     // Bloom / halation (cheap: two wide blurs, thresholded).
@@ -150,32 +164,61 @@ void main() {
     float d = length(uv - 0.5) * 1.4142;
     col *= mix(1.0, 1.0 - smoothstep(0.35, 1.05, d), uLensVignette);
 
-    // Night vision (IR "NightShot" style): brightness comes from the IR channel mix (red-heavy: skin and foliage
-    // glow, blue things go dark), lit by a camera-mounted IR lamp whose gaussian hotspot falls off towards the
-    // edges. Only the strongest highlights (eyes, teeth, shiny skin) are blurred wide and added back (CCD halation),
-    // then a steep S-curve crushes the mid-tones and lifts the highlights before the colour ramp.
+    // Night vision, 1998 NightShot with a forensic UV/IR flavour.
+    //  1. IR luminance: a red-heavy channel mix (melanin absorbs little IR, so skin loses its dark contrast), lit by a
+    //     camera-mounted IR lamp (gaussian hotspot). Mid tones get an edge-preserving smoothing + contrast damping so
+    //     skin turns flat, matte and ghostly while edges (eyes, teeth, outlines) stay sharp.
+    //  2. Tone curve: shadows crushed to charcoal green, mids lifted to pale sage.
+    //  3. UV-style fluorescence: Rec.601 luminance between fluorLow and fluorHigh (whites of eyes, teeth, synthetic
+    //     whites; skin is lower in green/blue so it stays out) glows mint-cyan, with a wide halation around it.
     if (uNightAmount > 0.0) {
-        float ir = dot(col, uNightIrWeights);
+        const vec2 DIR[8] = vec2[8](vec2(1.0, 0.0), vec2(0.7071, 0.7071), vec2(0.0, 1.0), vec2(-0.7071, 0.7071),
+                                    vec2(-1.0, 0.0), vec2(-0.7071, -0.7071), vec2(0.0, -1.0), vec2(0.7071, -0.7071));
+        float expo = uToneExposure * drift * flick;
         float r = length(uv - 0.5) * 2.0;
         float lit = mix(1.0, exp(-(r * r) / (2.0 * uNightHotspotSize * uNightHotspotSize)), uNightHotspot);
-        float nl = ir * uNightGain * lit;
-        if (uNightBloomAmount > 0.0) {
-            const vec2 DIR[8] = vec2[8](vec2(1.0, 0.0), vec2(0.7071, 0.7071), vec2(0.0, 1.0), vec2(-0.7071, 0.7071),
-                                        vec2(-1.0, 0.0), vec2(-0.7071, -0.7071), vec2(0.0, -1.0), vec2(0.7071, -0.7071));
-            float hl = 0.0;
-            for (int ring = 0; ring < 3; ring++) {
-                float rad = uNightBloomSize * (0.4 + 0.5 * float(ring));
+
+        float yc = dot(col, uNightIrWeights);
+        float y = yc;
+        if (uNightSmooth > 0.0) {
+            float sum = yc;
+            float wsum = 1.0;
+            for (int ring = 1; ring <= 2; ring++) {
+                float rad = uNightSmoothSize * float(ring);
                 for (int d = 0; d < 8; d++) {
-                    vec3 smp = fetch(uvj + DIR[d] * rad / uSize);
-                    float b = dot(smp, uNightIrWeights) * uToneExposure * uNightGain * lit;
-                    hl += max(b - uNightBloomThreshold, 0.0) / (1.0 - uNightBloomThreshold + 0.001);
+                    float yn = dot(fetch(uvj + DIR[d] * rad / uSize), uNightIrWeights) * expo;
+                    float wgt = exp(-((yn - yc) * (yn - yc)) / 0.02);          // similar brightness only: edges survive
+                    sum += wgt * yn;
+                    wsum += wgt;
                 }
             }
-            nl += hl / 24.0 * uNightBloomAmount * 3.0;
+            float mid = smoothstep(0.15, 0.40, yc) * (1.0 - smoothstep(0.70, 0.90, yc));
+            float smoothed = sum / wsum;
+            smoothed = mix(smoothed, 0.5, 0.2);                                // local contrast damping
+            y = mix(yc, smoothed, mid * uNightSmooth);
         }
-        nl = clamp(nl, 0.0, 1.0);
-        nl = mix(nl, smoothstep(0.28, 0.80, nl), uNightCurve);
-        col = mix(col, uNightColor * nl, uNightAmount);
+        y = clamp(y * uNightGain * lit, 0.0, 1.0);
+        y = mix(y, pow(smoothstep(uNightCurveToe, max(uNightCurveShoulder, uNightCurveToe + 0.05), y), 0.85), uNightCurve);
+        vec3 base = mix(uNightShadowColor, uNightColor, y);
+
+        float lo = uNightFluorLow;
+        float hi = max(uNightFluorHigh, lo + 0.01);
+        float f = smoothstep(lo, hi, luma(col)) * mix(1.0, lit, 0.5 * uNightHotspot);
+        float halo = 0.0;
+        if (uNightHalation > 0.0) {
+            for (int ring = 0; ring < 2; ring++) {
+                float rad = uNightHalationSize * (0.5 + 0.7 * float(ring));
+                for (int d = 0; d < 8; d++) {
+                    halo += smoothstep(lo, hi, luma(fetch(uvj + DIR[d] * rad / uSize) * expo));
+                }
+            }
+            halo /= 16.0;
+        }
+        vec3 night = base + uNightFluorColor * (f + halo * uNightHalation) * uNightFluorGain;
+        // soft shoulder: the hottest highlights stay minty instead of clipping to flat white
+        vec3 over = max(night - 0.75, 0.0);
+        night = min(night, vec3(0.75)) + 0.25 * (1.0 - exp(-over / 0.25));
+        col = mix(col, night, uNightAmount);
     }
 
     // Cine letterbox bars (the HUD below is drawn over them).

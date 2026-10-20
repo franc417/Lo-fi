@@ -341,31 +341,116 @@
    "max": 3.0
   },
   {
-   "path": "night.bloomThreshold",
+   "path": "night.curve",
    "type": "float",
-   "default": 0.8,
-   "min": 0.3,
-   "max": 0.98
+   "default": 0.0,
+   "min": 0.0,
+   "max": 1.0
   },
   {
-   "path": "night.bloomAmount",
+   "path": "night.shadowColor",
+   "type": "vec3",
+   "default": [
+    0.016,
+    0.071,
+    0.027
+   ],
+   "min": 0.0,
+   "max": 1.0
+  },
+  {
+   "path": "night.smooth",
+   "type": "float",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 1.0
+  },
+  {
+   "path": "night.smoothSize",
+   "type": "float",
+   "default": 2.0,
+   "min": 0.5,
+   "max": 6.0
+  },
+  {
+   "path": "night.fluorLow",
+   "type": "float",
+   "default": 0.78,
+   "min": 0.3,
+   "max": 0.99
+  },
+  {
+   "path": "night.fluorHigh",
+   "type": "float",
+   "default": 0.98,
+   "min": 0.31,
+   "max": 1.0
+  },
+  {
+   "path": "night.fluorGain",
+   "type": "float",
+   "default": 0.7,
+   "min": 0.0,
+   "max": 2.0
+  },
+  {
+   "path": "night.fluorColor",
+   "type": "vec3",
+   "default": [
+    0.8,
+    1.0,
+    0.95
+   ],
+   "min": 0.0,
+   "max": 1.0
+  },
+  {
+   "path": "night.halation",
    "type": "float",
    "default": 0.0,
    "min": 0.0,
    "max": 2.0
   },
   {
-   "path": "night.bloomSize",
+   "path": "night.halationSize",
    "type": "float",
    "default": 6.0,
    "min": 1.0,
    "max": 20.0
   },
   {
-   "path": "night.curve",
+   "path": "lens.smearThreshold",
+   "type": "float",
+   "default": 0.78,
+   "min": 0.5,
+   "max": 1.0
+  },
+  {
+   "path": "lens.smearTaps",
+   "type": "float",
+   "default": 24.0,
+   "min": 1.0,
+   "max": 24.0
+  },
+  {
+   "path": "digital.grainInverse",
    "type": "float",
    "default": 0.0,
    "min": 0.0,
+   "max": 1.0
+  },
+  {
+   "path": "night.curveToe",
+   "type": "float",
+   "default": 0.12,
+   "min": 0.0,
+   "max": 0.6
+  },
+  {
+   "path": "night.curveShoulder",
+   "type": "float",
+   "default": 0.78,
+   "min": 0.4,
    "max": 1.0
   }
  ]
