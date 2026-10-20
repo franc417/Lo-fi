@@ -9,7 +9,7 @@
  "upscale": "linear",
  "exportScale": 2,
  "overlay": {
-  "style": "camcorder"
+  "style": "handycam"
  },
  "params": {
   "lens.softness": 0.8,
@@ -72,5 +72,9 @@
     }
    ]
   }
- ]
+ ],
+ "hd": {
+  "w": 640,
+  "h": 480
+ }
 }

@@ -33,7 +33,7 @@ class LookParser(private val registry: ParamRegistry) {
         val vr = root.optJSONObject("virtualResolution") ?: fail("missing 'virtualResolution'")
         val w = vr.optInt("w", 0)
         val h = vr.optInt("h", 0)
-        if (w !in 64..1920 || h !in 64..1920) fail("virtualResolution must be 64..1920 px, got ${w}x$h")
+        if (w !in 16..1920 || h !in 16..1920) fail("virtualResolution must be 16..1920 px, got ${w}x$h")
 
         val upscale = when (root.optString("upscale", "")) {
             "nearest" -> Upscale.NEAREST
@@ -48,7 +48,25 @@ class LookParser(private val registry: ParamRegistry) {
             "camcorder" -> OverlayStyle.CAMCORDER
             "cctv" -> OverlayStyle.CCTV
             "nightshot" -> OverlayStyle.NIGHTSHOT
+            "handycam" -> OverlayStyle.HANDYCAM
             else -> fail("unknown overlay style '$s'")
+        }
+
+        val hd = root.optJSONObject("hd")?.let {
+            val hw = it.optInt("w", 0)
+            val hh = it.optInt("h", 0)
+            if (hw !in 16..1920 || hh !in 16..1920) fail("hd must be 16..1920 px, got ${hw}x$hh")
+            if (Math.abs(hw.toFloat() / hh - w.toFloat() / h) > 0.01f) fail("hd ${hw}x$hh must keep the aspect ratio of ${w}x$h")
+            VirtualResolution(hw, hh)
+        }
+        val keepArr = root.optJSONArray("keep")
+        val keep = LinkedHashSet<String>()
+        if (keepArr != null) {
+            for (i in 0 until keepArr.length()) {
+                val path = keepArr.optString(i, "")
+                if (registry[path] == null) fail("keep: unknown param '$path'")
+                keep.add(path)
+            }
         }
 
         val params = registry.defaults().toMutableMap()
@@ -101,7 +119,7 @@ class LookParser(private val registry: ParamRegistry) {
             }
         }
 
-        return Look(id, name, VirtualResolution(w, h), upscale, exportScale, overlay, params, macros)
+        return Look(id, name, VirtualResolution(w, h), upscale, exportScale, overlay, params, macros, hd, keep)
     }
 
     private fun checkRange(spec: ParamSpec, v: FloatArray, what: String, fail: (String) -> Nothing) {

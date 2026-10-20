@@ -8,6 +8,8 @@ uniform int uFrame;
 
 uniform float uTapeDropouts;
 uniform float uTapeHeadSwitch;
+uniform float uFilmScratches;
+uniform float uFilmDust;
 uniform float uDigitalGrain;
 uniform float uDigitalScanlines;
 uniform float uDigitalLevels;
@@ -50,6 +52,21 @@ void main() {
             float f = 1.0 - (uv.x - start) / len;
             col = mix(col, vec3(1.0), 0.2 + 0.7 * f);
         }
+    }
+
+    // Old-film scratches (vertical lines that change every other frame) and dust specks.
+    if (uFilmScratches > 0.0) {
+        int fseed = uFrame / 2;
+        for (int i = 0; i < 3; i++) {
+            float sx = hash12(vec2(float(i), 41.0), fseed);
+            float on = hash12(vec2(float(i), 43.0), fseed);
+            if (on < uFilmScratches * 0.5 && abs(uv.x - sx) < 0.7 / uSize.x) col = mix(col, vec3(0.92), 0.55);
+        }
+    }
+    if (uFilmDust > 0.0) {
+        vec2 cell = floor(px / 3.0);
+        if (hash12(cell, uFrame) > 1.0 - uFilmDust * 0.006) col = mix(col, vec3(0.05), 0.7);
+        if (hash12(cell + vec2(7.0, 3.0), uFrame) > 1.0 - uFilmDust * 0.003) col = mix(col, vec3(0.9), 0.7);
     }
 
     // Grain: per pixel, per frame, stronger in the shadows.

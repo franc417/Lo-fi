@@ -1,0 +1,56 @@
+{
+ "schema": 1,
+ "id": "sepia",
+ "name": "Sepia",
+ "virtualResolution": {
+  "w": 480,
+  "h": 360
+ },
+ "upscale": "linear",
+ "exportScale": 2,
+ "overlay": {
+  "style": "handycam"
+ },
+ "params": {
+  "tone.contrast": 1.15,
+  "lens.vignette": 0.35,
+  "digital.grain": 0.12,
+  "lens.softness": 0.5,
+  "digital.scanlines": 0.15,
+  "lens.bloom": 0.2,
+  "digital.paletteAmount": 1.0,
+  "digital.paletteDark": [
+   0.07,
+   0.035,
+   0.0
+  ],
+  "digital.paletteLight": [
+   1.0,
+   0.9,
+   0.68
+  ]
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.5,
+   "targets": [
+    {
+     "path": "digital.grain",
+     "from": 0.04,
+     "to": 0.35
+    },
+    {
+     "path": "lens.softness",
+     "from": 0.2,
+     "to": 1.2
+    }
+   ]
+  }
+ ],
+ "hd": {
+  "w": 640,
+  "h": 480
+ }
+}

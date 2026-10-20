@@ -1,0 +1,50 @@
+{
+ "schema": 1,
+ "id": "slow-shutter",
+ "name": "Slow Shutter",
+ "virtualResolution": {
+  "w": 480,
+  "h": 360
+ },
+ "upscale": "linear",
+ "exportScale": 2,
+ "overlay": {
+  "style": "handycam"
+ },
+ "params": {
+  "tape.ghost": 0.55,
+  "tone.exposure": 1.35,
+  "lens.softness": 1.2,
+  "lens.bloom": 0.8,
+  "tone.contrast": 0.95,
+  "tone.saturation": 1.1,
+  "digital.grain": 0.2,
+  "tone.exposureDrift": 0.4
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.5,
+   "targets": [
+    {
+     "path": "tape.ghost",
+     "from": 0.35,
+     "to": 0.75
+    },
+    {
+     "path": "digital.grain",
+     "from": 0.08,
+     "to": 0.4
+    }
+   ]
+  }
+ ],
+ "hd": {
+  "w": 640,
+  "h": 480
+ },
+ "keep": [
+  "tape.ghost"
+ ]
+}

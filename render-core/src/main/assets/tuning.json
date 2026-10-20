@@ -1,0 +1,75 @@
+{
+ "schema": 1,
+ "clarity": [
+  {
+   "id": "wear",
+   "label": "WEAR",
+   "hd": false,
+   "audio": "lofi",
+   "factors": {}
+  },
+  {
+   "id": "clear",
+   "label": "CLEAR",
+   "hd": false,
+   "audio": "light",
+   "factors": {
+    "digital.grain": 0.4,
+    "lens.softness": 0.4,
+    "lens.chromaAb": 0.4,
+    "tape.chromaBleed": 0.4,
+    "tape.ghost": 0.4,
+    "tone.exposureDrift": 0.4,
+    "film.flicker": 0.4,
+    "film.bounce": 0.4,
+    "film.dust": 0.4,
+    "film.scratches": 0.4
+   }
+  },
+  {
+   "id": "hd",
+   "label": "HD",
+   "hd": true,
+   "audio": "clean",
+   "factors": {
+    "digital.grain": 0.12,
+    "lens.softness": 0.12,
+    "lens.chromaAb": 0.12,
+    "tape.chromaBleed": 0.12,
+    "tape.ghost": 0.12,
+    "tone.exposureDrift": 0.12,
+    "film.flicker": 0.12,
+    "film.bounce": 0.12,
+    "film.dust": 0.12,
+    "film.scratches": 0.12
+   }
+  },
+  {
+   "id": "veryclear",
+   "label": "VERY CLEAR",
+   "hd": true,
+   "audio": "clean",
+   "factors": {
+    "digital.grain": 0.0,
+    "lens.softness": 0.0,
+    "lens.chromaAb": 0.0,
+    "tape.chromaBleed": 0.0,
+    "tape.ghost": 0.0,
+    "tone.exposureDrift": 0.0,
+    "film.flicker": 0.0,
+    "film.bounce": 0.0,
+    "film.dust": 0.0,
+    "film.scratches": 0.0
+   }
+  }
+ ],
+ "lines": {
+  "floor": {
+   "digital.scanlines": 0.35,
+   "tape.interlace": 0.3,
+   "tape.jitter": 0.6,
+   "tape.headSwitch": 0.3,
+   "tape.dropouts": 0.15
+  }
+ }
+}

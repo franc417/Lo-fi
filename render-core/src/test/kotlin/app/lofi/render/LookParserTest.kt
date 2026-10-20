@@ -107,6 +107,25 @@ class LookParserTest {
         expectFailure(curve, "curve")
     }
 
+    @Test fun parsesHdKeepAndHandycamOverlay() {
+        val j = base()
+        j.put("hd", JSONObject("""{"w":640,"h":480}""")).put("keep", JSONArray("""["tape.ghost"]""")).put("overlay", JSONObject("""{"style":"handycam"}"""))
+        val look = parser.parse(j.toString())
+        assertEquals(VirtualResolution(640, 480), look.resolution(true))
+        assertEquals(VirtualResolution(480, 360), look.resolution(false))
+        assertEquals(setOf("tape.ghost"), look.keep)
+        assertEquals(OverlayStyle.HANDYCAM, look.overlay)
+    }
+
+    @Test fun withoutHdTheBaseResolutionIsUsed() {
+        assertEquals(VirtualResolution(480, 360), parser.parse(base().toString()).resolution(true))
+    }
+
+    @Test fun rejectsHdWithAnotherAspectOrUnknownKeep() {
+        expectFailure(base().put("hd", JSONObject("""{"w":640,"h":640}""")), "aspect")
+        expectFailure(base().put("keep", JSONArray("""["lens.warp"]""")), "keep")
+    }
+
     @Test fun rejectsInvalidJson() {
         try {
             parser.parse("{nope")

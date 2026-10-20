@@ -255,6 +255,69 @@
    ],
    "min": 0.0,
    "max": 1.0
+  },
+  {
+   "path": "lens.stretchX",
+   "type": "float",
+   "default": 1.0,
+   "min": 0.5,
+   "max": 1.6
+  },
+  {
+   "path": "lens.letterbox",
+   "type": "float",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 0.45
+  },
+  {
+   "path": "tone.negative",
+   "type": "float",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 1.0
+  },
+  {
+   "path": "tone.solarize",
+   "type": "float",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 1.0
+  },
+  {
+   "path": "film.flicker",
+   "type": "float",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 1.0
+  },
+  {
+   "path": "film.bounce",
+   "type": "float",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 1.0
+  },
+  {
+   "path": "film.scratches",
+   "type": "float",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 1.0
+  },
+  {
+   "path": "film.dust",
+   "type": "float",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 1.0
+  },
+  {
+   "path": "tape.hold",
+   "type": "float",
+   "default": 1.0,
+   "min": 1.0,
+   "max": 12.0
   }
  ]
 }

@@ -1,0 +1,38 @@
+{
+ "schema": 1,
+ "id": "mosaic",
+ "name": "Mosaic",
+ "virtualResolution": {
+  "w": 80,
+  "h": 60
+ },
+ "upscale": "nearest",
+ "exportScale": 8,
+ "overlay": {
+  "style": "none"
+ },
+ "params": {
+  "tone.saturation": 1.2,
+  "tone.contrast": 1.15,
+  "digital.grain": 0.02
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.5,
+   "targets": [
+    {
+     "path": "digital.grain",
+     "from": 0.0,
+     "to": 0.1
+    },
+    {
+     "path": "tone.contrast",
+     "from": 1.0,
+     "to": 1.4
+    }
+   ]
+  }
+ ]
+}

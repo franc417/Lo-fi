@@ -1,0 +1,47 @@
+{
+ "schema": 1,
+ "id": "stretch",
+ "name": "Stretch",
+ "virtualResolution": {
+  "w": 480,
+  "h": 360
+ },
+ "upscale": "linear",
+ "exportScale": 2,
+ "overlay": {
+  "style": "handycam"
+ },
+ "params": {
+  "lens.stretchX": 1.45,
+  "lens.softness": 0.6,
+  "tone.saturation": 1.1,
+  "digital.scanlines": 0.2,
+  "digital.grain": 0.1
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.5,
+   "targets": [
+    {
+     "path": "digital.grain",
+     "from": 0.03,
+     "to": 0.3
+    },
+    {
+     "path": "lens.stretchX",
+     "from": 1.2,
+     "to": 1.6
+    }
+   ]
+  }
+ ],
+ "hd": {
+  "w": 640,
+  "h": 480
+ },
+ "keep": [
+  "lens.stretchX"
+ ]
+}

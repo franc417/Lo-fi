@@ -1,0 +1,56 @@
+{
+ "schema": 1,
+ "id": "pastel",
+ "name": "Pastel",
+ "virtualResolution": {
+  "w": 480,
+  "h": 360
+ },
+ "upscale": "linear",
+ "exportScale": 2,
+ "overlay": {
+  "style": "handycam"
+ },
+ "params": {
+  "tone.exposure": 1.2,
+  "tone.contrast": 0.75,
+  "tone.saturation": 0.55,
+  "lens.softness": 1.1,
+  "lens.bloom": 0.7,
+  "tone.shadowTint": [
+   0.08,
+   0.06,
+   0.1
+  ],
+  "tone.highlightTint": [
+   0.05,
+   0.02,
+   0.04
+  ],
+  "digital.grain": 0.08,
+  "lens.vignette": 0.2
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.5,
+   "targets": [
+    {
+     "path": "digital.grain",
+     "from": 0.02,
+     "to": 0.3
+    },
+    {
+     "path": "lens.softness",
+     "from": 0.6,
+     "to": 1.8
+    }
+   ]
+  }
+ ],
+ "hd": {
+  "w": 640,
+  "h": 480
+ }
+}

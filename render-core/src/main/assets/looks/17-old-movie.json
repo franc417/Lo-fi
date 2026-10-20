@@ -1,0 +1,75 @@
+{
+ "schema": 1,
+ "id": "old-movie",
+ "name": "Old Movie",
+ "virtualResolution": {
+  "w": 480,
+  "h": 360
+ },
+ "upscale": "linear",
+ "exportScale": 2,
+ "overlay": {
+  "style": "none"
+ },
+ "params": {
+  "tone.saturation": 0.0,
+  "tone.contrast": 0.95,
+  "lens.vignette": 0.7,
+  "digital.grain": 0.35,
+  "lens.softness": 0.9,
+  "film.flicker": 0.7,
+  "film.bounce": 0.6,
+  "film.scratches": 0.6,
+  "film.dust": 0.6,
+  "digital.paletteAmount": 1.0,
+  "digital.paletteDark": [
+   0.05,
+   0.035,
+   0.02
+  ],
+  "digital.paletteLight": [
+   0.95,
+   0.88,
+   0.72
+  ]
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.5,
+   "targets": [
+    {
+     "path": "digital.grain",
+     "from": 0.2,
+     "to": 0.6
+    },
+    {
+     "path": "film.scratches",
+     "from": 0.2,
+     "to": 1.0
+    },
+    {
+     "path": "film.dust",
+     "from": 0.2,
+     "to": 1.0
+    },
+    {
+     "path": "film.flicker",
+     "from": 0.3,
+     "to": 1.0
+    }
+   ]
+  }
+ ],
+ "hd": {
+  "w": 640,
+  "h": 480
+ },
+ "keep": [
+  "film.flicker",
+  "film.bounce",
+  "film.scratches",
+  "film.dust"
+ ]
+}

@@ -4,7 +4,7 @@ data class VirtualResolution(val w: Int, val h: Int)
 
 enum class Upscale { NEAREST, LINEAR }
 
-enum class OverlayStyle { NONE, CAMCORDER, CCTV, NIGHTSHOT }
+enum class OverlayStyle { NONE, CAMCORDER, CCTV, NIGHTSHOT, HANDYCAM }
 
 enum class Curve {
     LINEAR, QUAD;
@@ -27,7 +27,13 @@ class Look(
     val overlay: OverlayStyle,
     val baseParams: Map<String, FloatArray>,
     val macros: List<Macro>,
+    /** Optional higher internal resolution used by the HD / VERY CLEAR clarity levels (same aspect ratio). */
+    val hdResolution: VirtualResolution? = null,
+    /** Params that clarity levels must not touch because they ARE this mode's intended effect. */
+    val keep: Set<String> = emptySet(),
 ) {
+    fun resolution(hd: Boolean): VirtualResolution = if (hd) hdResolution ?: virtualResolution else virtualResolution
+
     fun macro(id: String): Macro? = macros.firstOrNull { it.id == id }
 
     fun defaultMacroValues(): Map<String, Float> = macros.associate { it.id to it.default }

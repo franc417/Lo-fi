@@ -56,7 +56,7 @@ object OverlayPainter {
         }
 
         when (style) {
-            OverlayStyle.CAMCORDER, OverlayStyle.NIGHTSHOT -> {
+            OverlayStyle.CAMCORDER, OverlayStyle.NIGHTSHOT, OverlayStyle.HANDYCAM -> {
                 if (recOn) {
                     // a mono (night-vision) viewfinder shows the tally lamp bright, not red
                     val dotColor = if (style == OverlayStyle.NIGHTSHOT) WHITE else RED
@@ -93,7 +93,7 @@ object OverlayText {
     /** Returns (date, time) text for the style. */
     fun format(style: OverlayStyle, epochMillis: Long, zone: ZoneId = ZoneId.systemDefault()): Pair<String, String> {
         val t = Instant.ofEpochMilli(epochMillis).atZone(zone)
-        if (style == OverlayStyle.NIGHTSHOT) {
+        if (style == OverlayStyle.NIGHTSHOT || style == OverlayStyle.HANDYCAM) {
             return DATE_NIGHT.format(t).uppercase(Locale.US) to TIME_NIGHT.format(t).uppercase(Locale.US)
         }
         val date = if (style == OverlayStyle.CCTV) DATE_SLASHES.format(t) else DATE_DOTS.format(t)

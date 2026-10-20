@@ -1,0 +1,44 @@
+{
+ "schema": 1,
+ "id": "solarize",
+ "name": "Solarize",
+ "virtualResolution": {
+  "w": 480,
+  "h": 360
+ },
+ "upscale": "linear",
+ "exportScale": 2,
+ "overlay": {
+  "style": "handycam"
+ },
+ "params": {
+  "tone.solarize": 1.0,
+  "tone.contrast": 1.3,
+  "tone.saturation": 1.4,
+  "digital.grain": 0.08,
+  "lens.softness": 0.4
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.5,
+   "targets": [
+    {
+     "path": "digital.grain",
+     "from": 0.02,
+     "to": 0.3
+    },
+    {
+     "path": "lens.softness",
+     "from": 0.1,
+     "to": 1.0
+    }
+   ]
+  }
+ ],
+ "hd": {
+  "w": 640,
+  "h": 480
+ }
+}

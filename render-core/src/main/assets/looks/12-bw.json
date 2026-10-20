@@ -1,0 +1,47 @@
+{
+ "schema": 1,
+ "id": "bw",
+ "name": "B&W",
+ "virtualResolution": {
+  "w": 480,
+  "h": 360
+ },
+ "upscale": "linear",
+ "exportScale": 2,
+ "overlay": {
+  "style": "handycam"
+ },
+ "params": {
+  "tone.saturation": 0.0,
+  "tone.contrast": 1.25,
+  "tone.exposure": 1.05,
+  "lens.vignette": 0.3,
+  "digital.grain": 0.15,
+  "digital.scanlines": 0.2,
+  "tape.interlace": 0.15,
+  "lens.softness": 0.6
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.5,
+   "targets": [
+    {
+     "path": "digital.grain",
+     "from": 0.04,
+     "to": 0.4
+    },
+    {
+     "path": "lens.softness",
+     "from": 0.2,
+     "to": 1.3
+    }
+   ]
+  }
+ ],
+ "hd": {
+  "w": 640,
+  "h": 480
+ }
+}

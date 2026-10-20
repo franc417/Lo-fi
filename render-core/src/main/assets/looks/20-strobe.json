@@ -1,0 +1,44 @@
+{
+ "schema": 1,
+ "id": "strobe",
+ "name": "Strobe",
+ "virtualResolution": {
+  "w": 480,
+  "h": 360
+ },
+ "upscale": "linear",
+ "exportScale": 2,
+ "overlay": {
+  "style": "handycam"
+ },
+ "params": {
+  "tape.hold": 6.0,
+  "tone.saturation": 1.2,
+  "tone.contrast": 1.2,
+  "digital.grain": 0.1,
+  "digital.scanlines": 0.15
+ },
+ "macros": [
+  {
+   "id": "wear",
+   "label": "Wear",
+   "default": 0.5,
+   "targets": [
+    {
+     "path": "digital.grain",
+     "from": 0.03,
+     "to": 0.3
+    },
+    {
+     "path": "tape.hold",
+     "from": 3.0,
+     "to": 10.0
+    }
+   ]
+  }
+ ],
+ "hd": {
+  "w": 640,
+  "h": 480
+ }
+}

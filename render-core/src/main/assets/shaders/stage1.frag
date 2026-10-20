@@ -16,6 +16,8 @@ uniform float uLensVignette;
 uniform float uLensChromaAb;
 uniform float uLensBloom;
 uniform float uLensSharpen;
+uniform float uLensStretchX;
+uniform float uLensLetterbox;
 uniform float uToneExposure;
 uniform float uToneContrast;
 uniform float uToneBlackCrush;
@@ -23,6 +25,11 @@ uniform float uToneWhitePoint;
 uniform float uToneSaturation;
 uniform float uToneGamma;
 uniform float uToneExposureDrift;
+uniform float uToneNegative;
+uniform float uToneSolarize;
+uniform float uFilmFlicker;
+uniform float uFilmBounce;
+uniform float uTapeHold;
 uniform vec3 uToneShadowTint;
 uniform vec3 uToneHighlightTint;
 uniform float uNightAmount;
@@ -53,12 +60,21 @@ void main() {
     vec2 uv = vUv;
     float row = floor(uv.y * uSize.y);
 
+    // Strobe ("flash" effect): keep showing the previous frame and only refresh every N frames.
+    if (uTapeHold > 1.5 && uHistoryValid > 0.5 && mod(float(uFrame), floor(uTapeHold + 0.5)) > 0.5) {
+        fragColor = vec4(texture(uPrev, uv).rgb, 1.0);
+        return;
+    }
+
     // Tape time-base jitter: per row, per frame, with occasional torn bands.
     float rnd = hash12(vec2(row, 7.0), uFrame);
     float jit = (rnd - 0.5) * 2.0 * uTapeJitter / uSize.x;
     float tear = hash12(vec2(floor(row / 5.0), 13.0), uFrame);
     if (tear > 0.985) jit += (rnd - 0.5) * uTapeJitter * 8.0 / uSize.x;
     vec2 uvj = vec2(uv.x + jit, uv.y);
+    uvj.y += (hash12(vec2(3.0, 3.0), uFrame) - 0.5) * 4.0 * uFilmBounce / uSize.y;   // projector gate bounce
+    uvj.x = (uvj.x - 0.5) / uLensStretchX + 0.5;                                    // slim / stretch
+    float inside = step(0.0, uvj.x) * step(uvj.x, 1.0);
 
     // Lens: softness + radial chromatic aberration.
     vec2 ca = (uv - 0.5) * 2.0 * uLensChromaAb / uSize;
@@ -66,6 +82,7 @@ void main() {
     col.r = blur3(uvj + ca, uLensSoftness).r;
     col.g = blur3(uvj, uLensSoftness).g;
     col.b = blur3(uvj - ca, uLensSoftness).b;
+    col *= inside;
 
     // Tape chroma: luma stays sharp, I/Q is low-passed and smeared to the right.
     if (uTapeChromaBleed > 0.01) {
@@ -88,13 +105,16 @@ void main() {
     // Tone. Auto-gain "hunting": slow brightness drift, as on a CCD camcorder in low light (30 fps assumed).
     float t = float(uFrame) / 30.0;
     float drift = 1.0 + uToneExposureDrift * 0.12 * (0.6 * sin(t * 0.8) + 0.4 * sin(t * 2.1 + 1.3));
-    col *= uToneExposure * drift;
+    float flick = 1.0 + uFilmFlicker * 0.3 * (hash12(vec2(5.0, 5.0), uFrame) - 0.5) * 2.0;
+    col *= uToneExposure * drift * flick;
     col = (col - 0.5) * uToneContrast + 0.5;
     col = max(col - uToneBlackCrush, 0.0) / (1.0 - uToneBlackCrush);
     col /= uToneWhitePoint;
     float l = luma(col);
     col = mix(vec3(l), col, uToneSaturation);
     col = pow(clamp(col, 0.0, 1.0), vec3(1.0 / uToneGamma));
+    col = mix(col, 1.0 - col, uToneNegative);                                                     // negative art
+    col = mix(col, 1.0 - col, uToneSolarize * smoothstep(vec3(0.46), vec3(0.54), col));            // solarize
     l = luma(col);
     col += uToneShadowTint * pow(1.0 - l, 2.0) + uToneHighlightTint * pow(l, 2.0);
 
@@ -119,6 +139,9 @@ void main() {
         float nl = clamp(ir * uNightGain * lit, 0.0, 1.0);
         col = mix(col, uNightColor * nl, uNightAmount);
     }
+
+    // Cine letterbox bars (the HUD below is drawn over them).
+    if (uv.y < uLensLetterbox || uv.y > 1.0 - uLensLetterbox) col = vec3(0.0);
 
     // Burned-in overlay (premultiplied alpha).
     vec4 ov = texture(uOverlay, vec2(uv.x, 1.0 - uv.y));

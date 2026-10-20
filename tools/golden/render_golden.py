@@ -20,7 +20,7 @@ FRAMES = 10            # frames fed through the pipeline so ghosting/history set
 MAE_TOLERANCE = 3.0    # 0-255, measured after a 4x box downsample (robust to JPEG + driver float noise)
 
 PRELUDE = "#version 330 core\n"
-FIXED_TIME = {"camcorder": ("12.10.2026", "22:57:03"), "cctv": ("12/10/2026", "22:57:03"), "nightshot": ("OCT 12 2026", "10:57:03 PM")}
+FIXED_TIME = {"camcorder": ("12.10.2026", "22:57:03"), "cctv": ("12/10/2026", "22:57:03"), "nightshot": ("OCT 12 2026", "10:57:03 PM"), "handycam": ("OCT 12 2026", "10:57:03 PM")}
 
 
 def uniform_name(path):
@@ -31,7 +31,7 @@ def load_registry():
     return json.loads((ASSETS / "params.json").read_text())["params"]
 
 
-def resolve(look, registry, macro_values=None):
+def resolve(look, registry, macro_values=None, tuning=None, clarity="wear", lines=0.5):
     vals = {p["path"]: list(p["default"]) if isinstance(p["default"], list) else [p["default"]] for p in registry}
     for k, v in look["params"].items():
         vals[k] = list(v) if isinstance(v, list) else [v]
@@ -43,7 +43,25 @@ def resolve(look, registry, macro_values=None):
             a = tg["from"] if isinstance(tg["from"], list) else [tg["from"]]
             b = tg["to"] if isinstance(tg["to"], list) else [tg["to"]]
             vals[tg["path"]] = [x + (y - x) * tt for x, y in zip(a, b)]
+    if tuning is not None:
+        vals = apply_tuning(vals, registry, tuning, clarity, lines, set(look.get("keep", [])))
     return vals
+
+
+def apply_tuning(vals, registry, tuning, clarity, lines, keep):
+    """Mirrors Tuning.apply in Tuning.kt. Clarity scales noise/blur/smear (except the look's `keep` list);
+    lines (0..1, 0.5 = the look's own) scales the horizontal-signal-line params and adds a floor above 0.5."""
+    level = next(c for c in tuning["clarity"] if c["id"] == clarity)
+    spec = {p["path"]: p for p in registry}
+    out = {k: list(v) for k, v in vals.items()}
+    for path, f in level["factors"].items():
+        if path not in keep:
+            out[path] = [x * f for x in out[path]]
+    mult = lines * 2.0 if lines <= 0.5 else 1.0 + (lines - 0.5) * 2.0
+    add = max(0.0, lines - 0.5) * 2.0
+    for path, floor in tuning["lines"]["floor"].items():
+        out[path] = [min(x * mult + floor * add, spec[path]["max"]) for x in out[path]]
+    return out
 
 
 # ---------- overlay (mirrors OverlayPainter.kt) ----------
@@ -76,7 +94,7 @@ def paint_overlay(font, style, w, h, date, time_s, rec_on=True):
 
     WHITE, RED, BLACK = (239, 239, 239, 255), (255, 45, 61, 255), (0, 0, 0, 255)
     dot = [".XXX.", "XXXXX", "XXXXX", "XXXXX", ".XXX."]
-    if style in ("camcorder", "nightshot"):
+    if style in ("camcorder", "nightshot", "handycam"):
         if rec_on:
             dot_color = WHITE if style == "nightshot" else RED
             for r, row in enumerate(dot):
@@ -131,11 +149,11 @@ class Pipeline:
             if name in prog:
                 prog[name].value = v[0] if len(v) == 1 else tuple(v)
 
-    def render_look(self, look, image, frames=FRAMES, macro_values=None):
+    def render_look(self, look, image, frames=FRAMES, macro_values=None, hd=False, tuning=None, clarity="wear", lines=0.5):
         ctx = self.ctx
-        vr = look["virtualResolution"]
+        vr = look.get("hd") if (hd and look.get("hd")) else look["virtualResolution"]
         W, H = vr["w"], vr["h"]
-        vals = resolve(look, self.registry, macro_values)
+        vals = resolve(look, self.registry, macro_values, tuning, clarity, lines)
         linear_up = look["upscale"] == "linear"
 
         src = self.tex(image.size, image.convert("RGBA").tobytes())
@@ -200,15 +218,37 @@ def contact_sheet(items, cols=4, cell=(480, 360)):
     return sheet
 
 
+def clarity_sheet(pipe, image, look_id="camcorder-98"):
+    """docs/looks/clarity.jpg: rows = clarity levels, columns = signal lines 0 / 0.5 / 1."""
+    tuning = json.loads((ASSETS / "tuning.json").read_text())
+    look = next(json.loads(p.read_text()) for p in sorted((ASSETS / "looks").glob("*.json")) if json.loads(p.read_text())["id"] == look_id)
+    levels = [c["id"] for c in tuning["clarity"]]
+    cell = (320, 240)
+    sheet = Image.new("RGB", (cell[0] * 3, (cell[1] + 22) * len(levels)), (10, 16, 112))
+    d = ImageDraw.Draw(sheet)
+    for r, lv in enumerate(levels):
+        for c, ln in enumerate((0.0, 0.5, 1.0)):
+            im = pipe.render_look(look, image, hd=True, tuning=tuning, clarity=lv, lines=ln)
+            sheet.paste(im.resize(cell, Image.BILINEAR), (c * cell[0], r * (cell[1] + 22) + 22))
+            d.text((c * cell[0] + 8, r * (cell[1] + 22) + 6), f"{look['name']}  clarity={lv}  lines={ln}", fill=(239, 234, 219))
+    return sheet
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--update", action="store_true")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--clarity-sheet", action="store_true")
     ap.add_argument("--out", default="/tmp/lofi-golden")
     args = ap.parse_args()
 
     pipe = Pipeline()
     image = Image.open(INPUT).convert("RGB")
+    if args.clarity_sheet:
+        out = GOLDEN_DIR / "clarity.jpg"
+        clarity_sheet(pipe, image).save(out, quality=88)
+        print("wrote", out)
+        return
     looks = [json.loads(p.read_text()) for p in sorted((ASSETS / "looks").glob("*.json"))]
     out_dir = GOLDEN_DIR if args.update else pathlib.Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
